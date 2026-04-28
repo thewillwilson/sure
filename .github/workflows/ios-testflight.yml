@@ -15,7 +15,7 @@ on:
         type: string
   push:
     tags:
-      - 'ios-v*'
+      - 'v*'
 
 permissions:
   contents: read
