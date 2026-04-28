@@ -5,16 +5,7 @@ All notable changes to the Sure Helm chart will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Changed
-- Bumped `pipelock.image.tag` from `2.0.0` to `2.2.0` (three minor releases behind latest). Floating `@v2` CI action pin picks up patch/minor updates automatically.
-- Refreshed pipelock feature notes in the chart README, `docs/hosting/pipelock.md`, and `pipelock.example.yaml` to reference the upstream changelog instead of a single version.
-
-### Added
-- README: CI scan status badge for the pipelock workflow.
-
-## [0.6.9-alpha] - 2026-03-24
+## [0.7.0] - 2026-04-30
 
 ### Changed
 - Bumped `pipelock.image.tag` from `1.5.0` to `2.0.0`
@@ -23,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped `pipelock.image.tag` from `0.3.1` to `0.3.2`
 - Consolidated `compose.example.pipelock.yml` into `compose.example.ai.yml` — Pipelock now runs alongside Ollama in one compose file with health checks, config volume mount, and MCP env vars (`MCP_API_TOKEN`, `MCP_USER_EMAIL`)
 - CI: Pipelock scan `fail-on-findings` changed from `false` to `true`; added `exclude-paths` for locale help text false positives
+- Bumped `pipelock.image.tag` from `2.0.0` to `2.2.0` (three minor releases behind latest). Floating `@v2` CI action pin picks up patch/minor updates automatically.
+- Refreshed pipelock feature notes in the chart README, `docs/hosting/pipelock.md`, and `pipelock.example.yaml` to reference the upstream changelog instead of a single version.
 
 ### Added
 - **Pipelock v2.0 features**:
@@ -54,11 +47,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `pipelock.requireForExternalAssistant`: Helm guard that fails when externalAssistant is enabled without pipelock
   - Component label (`app.kubernetes.io/component: pipelock`) on Service metadata for selector targeting
   - NOTES.txt: Pipelock health check commands, MCP access info, security notes, metrics status
+- README: CI scan status badge for the pipelock workflow.
 
 ### Fixed
 - Renamed `_asserts.tpl` to `asserts.tpl` — Helm's `_` prefix convention prevented guards from executing
 
-## [0.6.7-alpha] - 2026-01-10
+## [0.6.7] - 2026-01-31
 
 ### Added
 - **Redis Sentinel support for Sidekiq high availability**: Application now automatically detects and configures Sidekiq to use Redis Sentinel when `redisOperator.mode=sentinel` and `redisOperator.sentinel.enabled=true`
