@@ -154,7 +154,10 @@ jobs:
         run: |
           set -euo pipefail
 
+          ARCHIVE_PATH="$RUNNER_TEMP/Runner.xcarchive"
+          EXPORT_PATH="$PWD/build/ios/ipa"
           EXPORT_PLIST="$RUNNER_TEMP/ExportOptions.plist"
+
           cat > "$EXPORT_PLIST" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -181,11 +184,28 @@ jobs:
           </plist>
           EOF
 
-          CODE_SIGN_IDENTITY="${IOS_DISTRIBUTION_CERT_NAME}" \
-          CODE_SIGN_STYLE=Manual \
-          DEVELOPMENT_TEAM="${IOS_TEAM_ID}" \
-          PROVISIONING_PROFILE_SPECIFIER="${PROFILE_NAME}" \
-          flutter build ipa --release --export-options-plist="$EXPORT_PLIST"
+          flutter build ios --release --no-codesign
+
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -archivePath "$ARCHIVE_PATH" \
+            -destination 'generic/platform=iOS' \
+            archive \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="${IOS_TEAM_ID}" \
+            PRODUCT_BUNDLE_IDENTIFIER="${APP_BUNDLE_ID}" \
+            PROVISIONING_PROFILE_SPECIFIER="${PROFILE_NAME}" \
+            CODE_SIGN_IDENTITY="${IOS_DISTRIBUTION_CERT_NAME}"
+
+          mkdir -p "$EXPORT_PATH"
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportPath "$EXPORT_PATH" \
+            -exportOptionsPlist "$EXPORT_PLIST"
 
       - name: Prepare TestFlight auth key
         id: testflight_key
