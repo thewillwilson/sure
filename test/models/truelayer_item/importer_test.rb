@@ -37,7 +37,7 @@ class TruelayerItem::ImporterTest < ActiveSupport::TestCase
     assert_equal "requires_update", @truelayer_item.reload.status
   end
 
-  test "sets card account balance to available credit from API" do
+  test "sets card account balance to debt owed and stores available credit separately" do
     card_account = accounts(:credit_card)
     card_ta = TruelayerAccount.create!(
       truelayer_item: @truelayer_item,
@@ -57,17 +57,17 @@ class TruelayerItem::ImporterTest < ActiveSupport::TestCase
       { current: 500.0, currency: "GBP" }
     )
     mock_provider.stubs(:get_balance).with(account_id: "tl_card_001", kind: "card", psu_ip: anything).returns(
-      { available: 3279.0, current: 20.0, credit_limit: 3300.0, currency: "GBP" }
+      { available: 3279.0, current: -20.0, credit_limit: 3300.0, currency: "GBP" }
     )
 
     @truelayer_item.stubs(:truelayer_provider).returns(mock_provider)
     @importer.import
 
-    assert_in_delta 3279.0, card_account.reload.balance.to_f, 0.01
+    assert_in_delta 20.0, card_account.reload.balance.to_f, 0.01
     assert_in_delta 3279.0, card_account.credit_card.reload.available_credit.to_f, 0.01
   end
 
-  test "falls back to credit_limit minus current when available is absent" do
+  test "sets card balance to debt when available credit is absent" do
     card_account = accounts(:credit_card)
     card_ta = TruelayerAccount.create!(
       truelayer_item: @truelayer_item,
@@ -87,14 +87,13 @@ class TruelayerItem::ImporterTest < ActiveSupport::TestCase
       { current: 500.0, currency: "GBP" }
     )
     mock_provider.stubs(:get_balance).with(account_id: "tl_card_002", kind: "card", psu_ip: anything).returns(
-      { current: 20.0, credit_limit: 3300.0, currency: "GBP" }
+      { current: -20.0, currency: "GBP" }
     )
 
     @truelayer_item.stubs(:truelayer_provider).returns(mock_provider)
     @importer.import
 
-    assert_in_delta 3280.0, card_account.reload.balance.to_f, 0.01
-    assert_in_delta 3280.0, card_account.credit_card.reload.available_credit.to_f, 0.01
+    assert_in_delta 20.0, card_account.reload.balance.to_f, 0.01
   end
 
   test "imports cards when provider does not support accounts endpoint" do
