@@ -83,13 +83,9 @@ class TruelayerItem::Importer
           next unless current.present?
 
           if ta.card?
-            display_balance = card_display_balance(balance_data, current)
-            if display_balance
-              account.credit_card&.update!(available_credit: display_balance)
-              result = account.set_current_balance(display_balance)
-            else
-              result = account.set_current_balance(current.to_d)
-            end
+            # TrueLayer returns current as negative for cards (debt convention); abs gives the amount owed
+            account.credit_card&.update!(available_credit: balance_data[:available].to_d) if balance_data[:available].present?
+            result = account.set_current_balance(current.to_d.abs)
           else
             result = account.set_current_balance(current.to_d)
           end
@@ -99,14 +95,6 @@ class TruelayerItem::Importer
           raise if e.error_type == :unauthorized
           Rails.logger.error "TruelayerItem::Importer — failed to fetch balance for account #{ta.id}: #{e.message}"
         end
-      end
-    end
-
-    def card_display_balance(balance_data, current)
-      if balance_data[:available].present?
-        balance_data[:available].to_d
-      elsif balance_data[:credit_limit].present?
-        [ balance_data[:credit_limit].to_d - current.to_d.abs, 0 ].max
       end
     end
 
