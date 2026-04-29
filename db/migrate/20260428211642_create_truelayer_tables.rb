@@ -30,6 +30,7 @@ class CreateTruelayerTables < ActiveRecord::Migration[7.2]
     end
 
     add_index :truelayer_items, :status
+    add_index :truelayer_items, :scheduled_for_deletion
 
     create_table :truelayer_accounts, id: :uuid do |t|
       t.references :truelayer_item, null: false, foreign_key: true, type: :uuid
