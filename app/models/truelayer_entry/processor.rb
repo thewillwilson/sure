@@ -83,9 +83,7 @@ class TruelayerEntry::Processor
     end
 
     def extra
-      truelayer_extra = {}
-      truelayer_extra["pending"] = true if data[:_pending] || data[:transaction_status] == "PENDING"
-      return nil if truelayer_extra.empty?
-      { "truelayer" => truelayer_extra }
+      pending = data[:_pending] || data[:transaction_status] == "PENDING"
+      { "truelayer" => { "pending" => pending } }
     end
 end

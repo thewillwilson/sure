@@ -64,14 +64,19 @@ class TruelayerItemsController < ApplicationController
       return
     end
 
-    # Reuse an existing unconnected stub rather than accumulating orphans
+    # Reuse an existing unconnected stub rather than accumulating orphans,
+    # but always refresh credentials in case they were rotated since the stub was created
     @truelayer_item = Current.family.truelayer_items.where(access_token: nil, client_id: credentials.client_id).first
-    @truelayer_item ||= Current.family.truelayer_items.create!(
-      name:          "TrueLayer Connection",
-      client_id:     credentials.client_id,
-      client_secret: credentials.client_secret,
-      sandbox:       credentials.sandbox
-    )
+    if @truelayer_item
+      @truelayer_item.update!(client_secret: credentials.client_secret, sandbox: credentials.sandbox)
+    else
+      @truelayer_item = Current.family.truelayer_items.create!(
+        name:          "TrueLayer Connection",
+        client_id:     credentials.client_id,
+        client_secret: credentials.client_secret,
+        sandbox:       credentials.sandbox
+      )
+    end
 
     nonce = SecureRandom.hex(32)
     session[:truelayer_oauth_pending] = { "item_id" => @truelayer_item.id.to_s, "state" => nonce, "admin" => true }

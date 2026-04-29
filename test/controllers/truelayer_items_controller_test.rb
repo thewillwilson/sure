@@ -112,6 +112,16 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "csec", @truelayer_item.reload.client_secret
   end
 
+  test "authorize refreshes credentials on reused unconnected stub" do
+    @truelayer_item.update!(client_secret: "old_secret", sandbox: false)
+
+    Provider::Truelayer.any_instance.stubs(:auth_url).returns("https://auth.truelayer.com/")
+    post authorize_truelayer_items_url
+
+    @truelayer_item.reload
+    assert_equal "csec", @truelayer_item.client_secret
+  end
+
   test "authorize uses most recently created credentials when multiple exist" do
     newer = @family.truelayer_items.create!(
       name:          "Newer Creds",

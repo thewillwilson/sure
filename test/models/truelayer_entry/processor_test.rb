@@ -116,6 +116,21 @@ class TruelayerEntry::ProcessorTest < ActiveSupport::TestCase
     assert_equal true, entry.transaction&.extra&.dig("truelayer", "pending")
   end
 
+  test "stores pending false in extra for settled transactions so stale pending flag is overwritten" do
+    tx = {
+      transaction_id:   "txn_settled",
+      timestamp:        Date.current.iso8601,
+      amount:           -12.00,
+      currency:         "GBP",
+      transaction_type: "DEBIT",
+      description:      "Settled payment"
+    }
+
+    TruelayerEntry::Processor.new(tx, truelayer_account: @truelayer_account).process
+    entry = @account.entries.find_by!(external_id: "truelayer_txn_settled")
+    assert_equal false, entry.transaction&.extra&.dig("truelayer", "pending")
+  end
+
   test "skips when no linked account" do
     unlinked = TruelayerAccount.create!(
       truelayer_item: @truelayer_item,
