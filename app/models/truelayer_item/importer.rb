@@ -50,14 +50,16 @@ class TruelayerItem::Importer
         accounts_data = provider.get_accounts(psu_ip: psu_ip)
         accounts_data.each { |d| upsert_account(d, kind: "account") }
       rescue Provider::Truelayer::TruelayerError => e
-        raise unless e.error_type == :not_implemented
+        raise unless [ :not_implemented, :sca_exceeded ].include?(e.error_type)
+        Rails.logger.warn "TruelayerItem::Importer — SCA window expired, skipping account list refresh: #{e.message}" if e.error_type == :sca_exceeded
       end
 
       begin
         cards_data = provider.get_cards(psu_ip: psu_ip)
         cards_data.each { |d| upsert_account(d, kind: "card") }
       rescue Provider::Truelayer::TruelayerError => e
-        raise unless e.error_type == :not_implemented
+        raise unless [ :not_implemented, :sca_exceeded ].include?(e.error_type)
+        Rails.logger.warn "TruelayerItem::Importer — SCA window expired, skipping card list refresh: #{e.message}" if e.error_type == :sca_exceeded
       end
     end
 

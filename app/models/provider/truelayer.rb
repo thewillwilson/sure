@@ -199,7 +199,9 @@ class Provider::Truelayer
       when 401
         raise TruelayerError.new("Unauthorized — token may be expired", :unauthorized)
       when 403
-        raise TruelayerError.new("Forbidden: #{response.body.to_s.truncate(200)}", :forbidden)
+        body = response.body.to_s
+        error_type = body.include?("sca_exceeded") ? :sca_exceeded : :forbidden
+        raise TruelayerError.new("Forbidden (#{error_type}): #{body.truncate(200)}", error_type)
       when 404
         raise TruelayerError.new("Not found", :not_found)
       when 429
