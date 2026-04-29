@@ -133,6 +133,13 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "authorize refreshes credentials on reused unconnected stub" do
     @truelayer_item.update!(client_secret: "old_secret", sandbox: false)
+    # Newer connected item acts as the credentials reference with the current secret
+    @family.truelayer_items.create!(
+      name:          "Current Creds",
+      client_id:     "cid",
+      client_secret: "csec",
+      access_token:  "tok"
+    )
 
     Provider::Truelayer.any_instance.stubs(:auth_url).returns("https://auth.truelayer.com/")
     post authorize_truelayer_items_url
@@ -217,9 +224,10 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "complete_account_setup redirects with alert when account_id submitted blank" do
     truelayer_account = @truelayer_item.truelayer_accounts.create!(
-      name:       "My Bank",
-      account_id: "acct_123",
-      currency:   "GBP"
+      name:         "My Bank",
+      account_id:   "acct_123",
+      account_kind: "account",
+      currency:     "GBP"
     )
 
     post complete_account_setup_truelayer_item_url(@truelayer_item), params: {
