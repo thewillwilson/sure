@@ -68,7 +68,7 @@ class TruelayerItemTest < ActiveSupport::TestCase
     item.refresh_tokens!
   end
 
-  test "cannot create two active items with the same client_id for the same family" do
+  test "allows multiple active items with the same client_id for the same family" do
     TruelayerItem.create!(
       family:        @family,
       name:          "First",
@@ -76,26 +76,13 @@ class TruelayerItemTest < ActiveSupport::TestCase
       client_secret: "csec"
     )
 
-    duplicate = TruelayerItem.new(
+    second = TruelayerItem.new(
       family:        @family,
       name:          "Second",
       client_id:     "shared_cid",
       client_secret: "csec"
     )
 
-    assert_not duplicate.valid?
-    assert duplicate.errors[:client_id].present?
-  end
-
-  test "allows nil client_id on multiple items without triggering uniqueness error" do
-    item1 = TruelayerItem.new(family: @family, name: "Item 1")
-    item2 = TruelayerItem.new(family: @family, name: "Item 2")
-
-    item1.valid?
-    item2.valid?
-
-    # Both may fail presence validation, but neither should have a uniqueness error on client_id
-    refute item1.errors[:client_id].any? { |e| e.include?("taken") || e.include?("unique") }
-    refute item2.errors[:client_id].any? { |e| e.include?("taken") || e.include?("unique") }
+    assert second.valid?
   end
 end

@@ -1,14 +1,16 @@
 require "test_helper"
 
 class SyncHourlyJobTest < ActiveJob::TestCase
-  test "syncs all active items for each hourly syncable class" do
-    mock_item = mock("coinstats_item")
-    mock_item.expects(:sync_later).once
+  test "syncs all syncable items for each hourly syncable class" do
+    SyncHourlyJob::HOURLY_SYNCABLES.each do |klass|
+      mock_item = mock("#{klass.name.underscore}_item")
+      mock_item.expects(:sync_later).once
 
-    mock_relation = mock("active_relation")
-    mock_relation.stubs(:find_each).yields(mock_item)
+      mock_relation = mock("syncable_relation")
+      mock_relation.stubs(:find_each).yields(mock_item)
 
-    CoinstatsItem.expects(:active).returns(mock_relation)
+      klass.expects(:syncable).returns(mock_relation)
+    end
 
     SyncHourlyJob.perform_now
   end
@@ -21,10 +23,11 @@ class SyncHourlyJobTest < ActiveJob::TestCase
     success_item = mock("success_item")
     success_item.expects(:sync_later).once
 
-    mock_relation = mock("active_relation")
+    mock_relation = mock("syncable_relation")
     mock_relation.stubs(:find_each).multiple_yields([ failing_item ], [ success_item ])
 
-    CoinstatsItem.expects(:active).returns(mock_relation)
+    CoinstatsItem.expects(:syncable).returns(mock_relation)
+    TruelayerItem.expects(:syncable).returns(stub(find_each: nil))
 
     assert_nothing_raised do
       SyncHourlyJob.perform_now

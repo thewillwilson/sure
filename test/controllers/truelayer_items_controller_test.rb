@@ -184,6 +184,25 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
     assert flash[:alert].present?
   end
 
+  # complete_account_setup tests
+
+  test "complete_account_setup redirects with alert when account_id submitted blank" do
+    truelayer_account = @truelayer_item.truelayer_accounts.create!(
+      name:       "My Bank",
+      account_id: "acct_123",
+      currency:   "GBP"
+    )
+
+    post complete_account_setup_truelayer_item_url(@truelayer_item), params: {
+      truelayer_account_id: truelayer_account.id,
+      account_id:           ""
+    }
+
+    assert_redirected_to setup_accounts_truelayer_item_path(@truelayer_item)
+    assert flash[:alert].present?
+    assert_not truelayer_account.reload.setup_skipped
+  end
+
   # Admin authorization tests
 
   test "non-admin cannot access authorize" do

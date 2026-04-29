@@ -143,6 +143,13 @@ class TruelayerItemsController < ApplicationController
   end
 
   def complete_account_setup
+    if params[:account_id] == ""
+      redirect_to setup_accounts_truelayer_item_path(@truelayer_item),
+                  alert: t(".select_account_required"),
+                  status: :see_other
+      return
+    end
+
     truelayer_account = @truelayer_item.truelayer_accounts.find(params[:truelayer_account_id])
 
     result = TruelayerItem::AccountSetup.new(

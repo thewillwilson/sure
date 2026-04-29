@@ -12,8 +12,6 @@ class TruelayerItem < ApplicationRecord
 
   validates :name,          presence: true
   validates :client_id,     presence: true
-  validates :client_id,     uniqueness: { scope: :family_id, allow_nil: true,
-                                          conditions: -> { where(scheduled_for_deletion: false) } }
   validates :client_secret, presence: true, on: :create
 
   belongs_to :family

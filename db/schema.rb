@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_04_29_000002) do
+ActiveRecord::Schema[7.2].define(version: 2026_04_29_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1606,7 +1606,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_29_000002) do
     t.datetime "sync_start_date"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index [ "family_id", "client_id" ], name: "idx_truelayer_items_on_family_and_client_id", unique: true, where: "((client_id IS NOT NULL) AND (scheduled_for_deletion = false))"
     t.index [ "family_id" ], name: "index_truelayer_items_on_family_id"
     t.index [ "scheduled_for_deletion" ], name: "index_truelayer_items_on_scheduled_for_deletion"
     t.index [ "status" ], name: "index_truelayer_items_on_status"

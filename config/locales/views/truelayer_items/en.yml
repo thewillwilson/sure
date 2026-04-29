@@ -34,6 +34,7 @@ en:
       connect_success: "Bank connected. Your accounts are being imported."
     complete_account_setup:
       success: "Accounts connected and sync scheduled."
+      select_account_required: "Please select an account to link."
     link_existing_account:
       success: "Account linked successfully."
       no_account_selected: "Please select a TrueLayer account to link."
