@@ -35,11 +35,6 @@
               <%= icon "alert-triangle", size: "sm", color: "warning" %>
               <%= tag.span t(".reconnect_required") %>
             </div>
-          <% elsif truelayer_item.token_lapsed? %>
-            <div class="text-warning flex items-center gap-1">
-              <%= icon "alert-triangle", size: "sm", color: "warning" %>
-              <%= tag.span t(".token_expired") %>
-            </div>
           <% else %>
             <p class="text-secondary">
               <% if truelayer_item.last_synced_at %>
@@ -59,13 +54,6 @@
                           method: :post,
                           class: "inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-warning hover:opacity-90 transition-colors",
                           data: { turbo: false } do %>
-              <%= icon "refresh-cw", size: "sm" %>
-              <%= t(".reconnect") %>
-            <% end %>
-          <% elsif truelayer_item.token_lapsed? %>
-            <%= button_to refresh_token_truelayer_item_path(truelayer_item),
-                          method: :post,
-                          class: "inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-warning hover:opacity-90 transition-colors" do %>
               <%= icon "refresh-cw", size: "sm" %>
               <%= t(".reconnect") %>
             <% end %>
