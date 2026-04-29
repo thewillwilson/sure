@@ -35,7 +35,7 @@
           <% @truelayer_items.each do |item| %>
             <div class="flex items-center justify-between p-3 rounded-lg bg-container border border-primary">
               <div class="flex items-center gap-3">
-                <% if item.token_valid? %>
+                <% if !item.token_lapsed? %>
                   <div class="w-2 h-2 bg-success rounded-full"></div>
                   <div>
                     <p class="text-sm font-medium text-primary"><%= item.name %></p>
@@ -50,7 +50,7 @@
                 <% end %>
               </div>
 
-              <% if item.token_expired? %>
+              <% if item.token_lapsed? %>
                 <%= button_to reauthorize_truelayer_item_path(item),
                               method: :post,
                               class: "inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-medium text-white bg-warning hover:opacity-90 transition-colors",
