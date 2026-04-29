@@ -48,6 +48,14 @@ class TruelayerItem < ApplicationRecord
     raise
   end
 
+  def institution_name
+    truelayer_accounts.filter_map(&:provider_display_name).first
+  end
+
+  def display_name
+    institution_name || name
+  end
+
   def linked_accounts_count
     truelayer_accounts.joins(:account_provider).count
   end

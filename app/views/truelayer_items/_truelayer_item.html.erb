@@ -14,7 +14,7 @@
 
         <div class="pl-1 text-sm">
           <div class="flex items-center gap-2">
-            <%= tag.p truelayer_item.name, class: "font-medium text-primary" %>
+            <%= tag.p truelayer_item.display_name, class: "font-medium text-primary" %>
             <% if truelayer_item.scheduled_for_deletion? %>
               <p class="text-destructive text-sm animate-pulse"><%= t(".deletion_in_progress") %></p>
             <% end %>
