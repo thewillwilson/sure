@@ -114,7 +114,12 @@ class TruelayerItem::Importer
             psu_ip:     psu_ip
           )
           settled.each { |tx| TruelayerEntry::Processor.new(tx, truelayer_account: ta).process }
+        rescue Provider::Truelayer::TruelayerError => e
+          raise if e.error_type == :unauthorized
+          Rails.logger.error "TruelayerItem::Importer — failed to import settled transactions for account #{ta.id}: #{e.message}"
+        end
 
+        begin
           pending = provider.get_pending_transactions(
             account_id: ta.account_id,
             kind:       ta.account_kind,
@@ -128,7 +133,8 @@ class TruelayerItem::Importer
           end
         rescue Provider::Truelayer::TruelayerError => e
           raise if e.error_type == :unauthorized
-          Rails.logger.error "TruelayerItem::Importer — failed to import account #{ta.id}: #{e.message}"
+          next if e.error_type == :not_implemented
+          Rails.logger.error "TruelayerItem::Importer — failed to import pending transactions for account #{ta.id}: #{e.message}"
         end
       end
     end
