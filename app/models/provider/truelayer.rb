@@ -69,13 +69,11 @@ class Provider::Truelayer
     raise TruelayerError.new("Request failed: #{e.message}", :request_failed)
   end
 
-  def extend_connection(refresh_token:, redirect_uri:, state: nil)
+  def generate_reauth_uri(refresh_token:, redirect_uri:, state: nil)
     body = {
-      client_id:                   client_id,
-      client_secret:               client_secret,
-      refresh_token:               refresh_token,
-      redirect_uri:                redirect_uri,
-      user_has_reconfirmed_consent: false
+      response_type: "code",
+      refresh_token:  refresh_token,
+      redirect_uri:   redirect_uri
     }
     body[:state] = state if state.present?
 
