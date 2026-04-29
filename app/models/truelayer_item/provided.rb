@@ -36,7 +36,6 @@ module TruelayerItem::Provided
         sandbox:       sandbox?
       )
       result = provider.refresh_access_token(refresh_token: refresh_token)
-      Rails.logger.info "TrueLayer refresh_access_token response: expires_in=#{result[:expires_in].inspect} access_token_present=#{result[:access_token].present?} refresh_token_present=#{result[:refresh_token].present?}"
       update!(
         access_token:     result[:access_token],
         refresh_token:    result[:refresh_token] || refresh_token,

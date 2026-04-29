@@ -110,8 +110,6 @@ class TruelayerItemsController < ApplicationController
       redirect_uri: callback_truelayer_items_url
     )
 
-    Rails.logger.info "TrueLayer exchange_code response: expires_in=#{result[:expires_in].inspect} access_token_present=#{result[:access_token].present?} refresh_token_present=#{result[:refresh_token].present?}"
-
     if pending["type"] == "reauth"
       @truelayer_item.update!(
         access_token:     result[:access_token],
