@@ -1,4 +1,4 @@
-<%= render DS::Dialog.new(disable_frame: true) do |dialog| %>
+<%= render DS::Dialog.new do |dialog| %>
   <% dialog.with_header(title: t(".title")) do %>
     <div class="flex items-center gap-2">
       <%= icon "building-2", class: "text-primary" %>

@@ -103,7 +103,8 @@
               text: t(".setup_accounts"),
               icon: "settings",
               variant: "primary",
-              href: setup_accounts_truelayer_item_path(truelayer_item)
+              href: setup_accounts_truelayer_item_path(truelayer_item),
+              frame: :modal
             ) %>
           </div>
         <% elsif truelayer_item.skipped_accounts_count > 0 %>
