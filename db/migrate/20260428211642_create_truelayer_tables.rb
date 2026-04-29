@@ -26,6 +26,9 @@ class CreateTruelayerTables < ActiveRecord::Migration[7.2]
       # Sync window
       t.datetime :sync_start_date
 
+      # Consent window (90 days from initial auth, fetched from /data/v1/me)
+      t.datetime :consent_expires_at
+
       t.timestamps
     end
 

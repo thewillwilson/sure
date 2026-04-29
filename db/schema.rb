@@ -1604,6 +1604,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_28_211642) do
     t.boolean "sandbox", default: false, null: false
     t.string "last_psu_ip"
     t.datetime "sync_start_date"
+    t.datetime "consent_expires_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index [ "family_id" ], name: "index_truelayer_items_on_family_id"
