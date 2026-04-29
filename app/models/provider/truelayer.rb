@@ -80,7 +80,7 @@ class Provider::Truelayer
     body[:state] = state if state.present?
 
     response = self.class.post(
-      "#{auth_base}/v1/extendconnection",
+      "#{auth_base}/v1/reauthuri",
       headers: { "Content-Type" => "application/json" },
       body:    body.to_json
     )
