@@ -19,6 +19,7 @@ class TruelayerItem::ImporterTest < ActiveSupport::TestCase
       currency:       "GBP"
     )
     AccountProvider.create!(account: @account, provider: @truelayer_account)
+    @truelayer_item.update!(consent_expires_at: 90.days.from_now)
     @importer = TruelayerItem::Importer.new(@truelayer_item)
   end
 
