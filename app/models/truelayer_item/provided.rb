@@ -17,11 +17,11 @@ module TruelayerItem::Provided
   end
 
   def token_valid?
-    access_token.present? && (token_expires_at.nil? || token_expires_at > 60.seconds.from_now)
+    access_token.present? && (token_expires_at.nil? || token_expires_at > 5.minutes.from_now)
   end
 
   def token_expired?
-    access_token.present? && token_expires_at.present? && token_expires_at <= 60.seconds.from_now
+    access_token.present? && token_expires_at.present? && token_expires_at <= 5.minutes.from_now
   end
 
   def refresh_tokens!
