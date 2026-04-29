@@ -38,13 +38,17 @@
                 <% if !item.token_lapsed? %>
                   <div class="w-2 h-2 bg-success rounded-full"></div>
                   <div>
-                    <p class="text-sm font-medium text-primary"><%= item.name %></p>
-                    <p class="text-xs text-secondary"><%= t(".token_expires", date: item.token_expires_at&.strftime("%b %d, %Y") || t(".unknown")) %></p>
+                    <p class="text-sm font-medium text-primary"><%= item.display_name %></p>
+                    <% if item.consent_expires_at.present? %>
+                      <p class="text-xs text-secondary"><%= t(".consent_expires", date: item.consent_expires_at.to_date.to_fs(:long)) %></p>
+                    <% else %>
+                      <p class="text-xs text-secondary"><%= t(".configured") %></p>
+                    <% end %>
                   </div>
                 <% else %>
                   <div class="w-2 h-2 bg-warning rounded-full"></div>
                   <div>
-                    <p class="text-sm font-medium text-primary"><%= item.name %></p>
+                    <p class="text-sm font-medium text-primary"><%= item.display_name %></p>
                     <p class="text-xs text-destructive"><%= t(".token_expired") %></p>
                   </div>
                 <% end %>

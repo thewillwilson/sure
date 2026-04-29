@@ -3,8 +3,7 @@ en:
   truelayer_items:
     new:
       title: Link with TrueLayer
-      token_expires: "Token expires: %{date}"
-      unknown: Unknown
+      consent_expires: "Access expires %{date}"
       token_expired: Token expired — reconnect required
       configured: Configured
       ready_to_connect: Ready to connect a bank
