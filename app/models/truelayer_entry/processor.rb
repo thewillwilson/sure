@@ -84,6 +84,9 @@ class TruelayerEntry::Processor
 
     def extra
       pending = data[:_pending] || data[:transaction_status] == "PENDING"
-      { "truelayer" => { "pending" => pending } }
+      result = { "truelayer" => { "pending" => pending } }
+      norm_id = data[:normalised_provider_transaction_id].presence
+      result["truelayer"]["normalised_provider_transaction_id"] = norm_id if norm_id
+      result
     end
 end

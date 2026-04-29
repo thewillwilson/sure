@@ -234,6 +234,38 @@ class TruelayerEntry::ProcessorTest < ActiveSupport::TestCase
     assert_not entry.transaction.pending?, "should no longer be pending after settle"
   end
 
+  test "settled transaction reconciles with pending via normalised_provider_transaction_id even when amount differs" do
+    pending_tx = {
+      transaction_id:                      "txn_petrol_pending",
+      normalised_provider_transaction_id:  "norm_petrol_001",
+      timestamp:                           Date.current.iso8601,
+      amount:                              -1.00,
+      currency:                            "GBP",
+      transaction_type:                    "DEBIT",
+      description:                         "BP GARAGE",
+      _pending:                            true
+    }
+    TruelayerEntry::Processor.new(pending_tx, truelayer_account: @truelayer_account).process
+
+    settled_tx = {
+      transaction_id:                      "txn_petrol_settled",
+      normalised_provider_transaction_id:  "norm_petrol_001",
+      timestamp:                           Date.current.iso8601,
+      amount:                              -65.43,
+      currency:                            "GBP",
+      transaction_type:                    "DEBIT",
+      description:                         "BP GARAGE"
+    }
+
+    assert_no_difference "@account.entries.count" do
+      TruelayerEntry::Processor.new(settled_tx, truelayer_account: @truelayer_account).process
+    end
+
+    entry = @account.entries.find_by!(external_id: "truelayer_txn_petrol_settled", source: "truelayer")
+    assert_not entry.transaction.pending?, "should no longer be pending after settle"
+    assert_in_delta 65.43, entry.amount.to_f, 0.01, "should have updated to settled amount"
+  end
+
   test "marks transaction pending when transaction_status is PENDING on settled endpoint" do
     tx = {
       transaction_id:   "txn_status_pend",

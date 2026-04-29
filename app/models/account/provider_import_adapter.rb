@@ -100,7 +100,18 @@ class Account::ProviderImportAdapter
           end
         end
 
-        # PRIORITY 2: Fallback to EXACT amount match (for SimpleFIN and providers without linking IDs)
+        # PRIORITY 2: TrueLayer normalised_provider_transaction_id (stable across pending→posted even when amount changes)
+        if pending_match.nil? && extra.is_a?(Hash)
+          norm_id = extra.with_indifferent_access.dig("truelayer", "normalised_provider_transaction_id")
+          if norm_id.present?
+            pending_match = find_pending_by_truelayer_norm_id(norm_id, source: source)
+            if pending_match
+              Rails.logger.info("Reconciling pending→posted via TrueLayer normalised_provider_transaction_id #{norm_id}: claiming entry #{pending_match.id} (#{pending_match.name}) with new external_id #{external_id}")
+            end
+          end
+        end
+
+        # PRIORITY 3: Fallback to EXACT amount match (for SimpleFIN and providers without linking IDs)
         # Only searches backward in time - pending date must be <= posted date
         if pending_match.nil?
           pending_match = find_pending_transaction(date: date, amount: amount, currency: currency, source: source)
@@ -665,6 +676,17 @@ class Account::ProviderImportAdapter
     query = query.where.not(id: exclude_entry_ids) if exclude_entry_ids.present?
 
     query.order(created_at: :asc).first
+  end
+
+  # Finds a pending TrueLayer transaction by normalised_provider_transaction_id
+  # This ID is stable across pending→posted even when the amount changes (e.g. petrol pre-auths)
+  def find_pending_by_truelayer_norm_id(norm_id, source:)
+    account.entries
+      .joins("INNER JOIN transactions ON transactions.id = entries.entryable_id AND entries.entryable_type = 'Transaction'")
+      .where(source: source)
+      .where("transactions.extra -> 'truelayer' ->> 'normalised_provider_transaction_id' = ?", norm_id)
+      .where("(transactions.extra -> 'truelayer' ->> 'pending')::boolean = true")
+      .first
   end
 
   # Finds a pending transaction that likely matches a newly posted transaction
