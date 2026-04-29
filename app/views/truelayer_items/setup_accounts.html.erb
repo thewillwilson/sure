@@ -1,98 +1,97 @@
-<%= render DS::Dialog.new do |dialog| %>
-  <% dialog.with_header(title: t(".title")) do %>
-    <div class="flex items-center gap-2">
-      <%= icon "building-2", class: "text-primary" %>
-      <span class="text-primary"><%= t(".subtitle") %></span>
-    </div>
-  <% end %>
-
-  <% dialog.with_body do %>
-    <% if @truelayer_accounts.empty? %>
-      <div class="p-4 flex flex-col gap-3 items-center justify-center">
-        <p class="text-primary font-medium text-sm"><%= t(".all_set_up") %></p>
-        <p class="text-secondary text-sm"><%= t(".no_remaining") %></p>
-        <%= render DS::Link.new(
-          text: t(".go_to_accounts"),
-          variant: "primary",
-          href: accounts_path
-        ) %>
+<%= turbo_frame_tag "modal" do %>
+  <%= render DS::Dialog.new do |dialog| %>
+    <% dialog.with_header(title: t(".title")) do %>
+      <div class="flex items-center gap-2">
+        <%= icon "building-2", class: "text-primary" %>
+        <span class="text-primary"><%= t(".subtitle") %></span>
       </div>
-    <% else %>
-      <% truelayer_account = @truelayer_accounts.first %>
+    <% end %>
 
-      <div class="border border-primary rounded-lg p-4 space-y-3">
-        <div>
-          <h3 class="font-medium text-primary"><%= truelayer_account.name %></h3>
-          <p class="text-sm text-secondary">
-            <%= truelayer_account.display_type %>
-            <% if truelayer_account.masked_account_number.present? %>
-              &middot; <%= truelayer_account.masked_account_number %>
-            <% end %>
-            &middot; <%= truelayer_account.currency %>
-          </p>
+    <% dialog.with_body do %>
+      <% if @truelayer_accounts.empty? %>
+        <div class="p-4 flex flex-col gap-3 items-center justify-center">
+          <p class="text-primary font-medium text-sm"><%= t(".all_set_up") %></p>
+          <p class="text-secondary text-sm"><%= t(".no_remaining") %></p>
+          <%= render DS::Link.new(
+            text: t(".go_to_accounts"),
+            variant: "primary",
+            href: accounts_path
+          ) %>
         </div>
+      <% else %>
+        <% truelayer_account = @truelayer_accounts.first %>
 
-        <div class="space-y-2">
-          <%= form_with url: complete_account_setup_truelayer_item_path(@truelayer_item),
-                        method: :post,
-                        data: { turbo_frame: "_top" },
-                        class: "space-y-3" do |form| %>
-            <%= form.hidden_field :truelayer_account_id, value: truelayer_account.id %>
-            <%= form.hidden_field :create_account, value: "true" %>
+        <div class="border border-primary rounded-lg p-4 space-y-3">
+          <div>
+            <h3 class="font-medium text-primary"><%= truelayer_account.name %></h3>
+            <p class="text-sm text-secondary">
+              <%= truelayer_account.display_type %>
+              <% if truelayer_account.masked_account_number.present? %>
+                &middot; <%= truelayer_account.masked_account_number %>
+              <% end %>
+              &middot; <%= truelayer_account.currency %>
+            </p>
+          </div>
 
-            <div class="flex gap-3">
-              <%= render DS::Button.new(
-                text: t(".create_new"),
-                variant: "primary",
-                icon: "plus",
-                type: "submit"
-              ) %>
-            </div>
-          <% end %>
-
-          <% if @existing_accounts.any? %>
-            <p class="text-xs text-secondary text-center"><%= t(".or") %></p>
-
+          <div class="space-y-2">
             <%= form_with url: complete_account_setup_truelayer_item_path(@truelayer_item),
                           method: :post,
-                          data: { turbo_frame: "_top" },
                           class: "space-y-3" do |form| %>
               <%= form.hidden_field :truelayer_account_id, value: truelayer_account.id %>
+              <%= form.hidden_field :create_account, value: "true" %>
 
-              <%= form.label :account_id, t(".existing_account_label"), class: "sr-only" %>
-              <%= form.select :account_id,
-                              options_from_collection_for_select(@existing_accounts, :id, :name),
-                              { include_blank: t(".select_existing_placeholder") },
-                              { required: true, class: "appearance-none bg-container border border-primary rounded-md px-3 py-2 text-sm leading-6 text-primary focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none w-full" } %>
+              <div class="flex gap-3">
+                <%= render DS::Button.new(
+                  text: t(".create_new"),
+                  variant: "primary",
+                  icon: "plus",
+                  type: "submit"
+                ) %>
+              </div>
+            <% end %>
 
+            <% if @existing_accounts.any? %>
+              <p class="text-xs text-secondary text-center"><%= t(".or") %></p>
+
+              <%= form_with url: complete_account_setup_truelayer_item_path(@truelayer_item),
+                            method: :post,
+                            class: "space-y-3" do |form| %>
+                <%= form.hidden_field :truelayer_account_id, value: truelayer_account.id %>
+
+                <%= form.label :account_id, t(".existing_account_label"), class: "sr-only" %>
+                <%= form.select :account_id,
+                                options_from_collection_for_select(@existing_accounts, :id, :name),
+                                { include_blank: t(".select_existing_placeholder") },
+                                { required: true, class: "appearance-none bg-container border border-primary rounded-md px-3 py-2 text-sm leading-6 text-primary focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none w-full" } %>
+
+                <%= render DS::Button.new(
+                  text: t(".link_existing"),
+                  variant: "secondary",
+                  type: "submit"
+                ) %>
+              <% end %>
+            <% end %>
+          </div>
+
+          <div class="border-t border-primary pt-3">
+            <%= form_with url: complete_account_setup_truelayer_item_path(@truelayer_item),
+                          method: :post do |form| %>
+              <%= form.hidden_field :truelayer_account_id, value: truelayer_account.id %>
               <%= render DS::Button.new(
-                text: t(".link_existing"),
-                variant: "secondary",
+                text: t(".skip"),
+                variant: "ghost",
                 type: "submit"
               ) %>
             <% end %>
-          <% end %>
+          </div>
         </div>
 
-        <div class="border-t border-primary pt-3">
-          <%= form_with url: complete_account_setup_truelayer_item_path(@truelayer_item),
-                        method: :post,
-                        data: { turbo_frame: "_top" } do |form| %>
-            <%= form.hidden_field :truelayer_account_id, value: truelayer_account.id %>
-            <%= render DS::Button.new(
-              text: t(".skip"),
-              variant: "ghost",
-              type: "submit"
-            ) %>
-          <% end %>
-        </div>
-      </div>
-
-      <% remaining = @truelayer_accounts.count - 1 %>
-      <% if remaining > 0 %>
-        <p class="text-xs text-secondary text-center mt-3">
-          <%= t(".remaining_accounts", count: remaining) %>
-        </p>
+        <% remaining = @truelayer_accounts.count - 1 %>
+        <% if remaining > 0 %>
+          <p class="text-xs text-secondary text-center mt-3">
+            <%= t(".remaining_accounts", count: remaining) %>
+          </p>
+        <% end %>
       <% end %>
     <% end %>
   <% end %>
