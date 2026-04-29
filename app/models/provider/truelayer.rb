@@ -87,6 +87,18 @@ class Provider::Truelayer
     raise TruelayerError.new("Request failed: #{e.message}", :request_failed)
   end
 
+  def get_me(psu_ip: nil)
+    with_rate_limit_retry do
+      response = self.class.get(
+        "#{api_base}/me",
+        headers: bearer_headers(psu_ip: psu_ip)
+      )
+      extract_results(handle_response(response)).first
+    end
+  rescue SocketError, Net::OpenTimeout, Net::ReadTimeout => e
+    raise TruelayerError.new("Request failed: #{e.message}", :request_failed)
+  end
+
   def get_accounts(psu_ip: nil)
     with_rate_limit_retry do
       response = self.class.get(

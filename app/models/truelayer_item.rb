@@ -48,6 +48,10 @@ class TruelayerItem < ApplicationRecord
     raise
   end
 
+  def consent_expiring_soon?
+    consent_expires_at.present? && consent_expires_at <= 7.days.from_now
+  end
+
   def institution_name
     truelayer_accounts.filter_map(&:provider_display_name).first
   end

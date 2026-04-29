@@ -20,6 +20,11 @@
             <% end %>
           </div>
           <p class="text-xs text-secondary"><%= t(".provider_name") %></p>
+          <% if truelayer_item.consent_expires_at.present? %>
+            <p class="text-xs <%= truelayer_item.consent_expiring_soon? ? "text-warning font-medium" : "text-secondary" %>">
+              <%= t(".consent_expires", date: truelayer_item.consent_expires_at.to_date.to_fs(:long)) %>
+            </p>
+          <% end %>
           <% if truelayer_item.syncing? %>
             <div class="text-secondary flex items-center gap-1">
               <%= icon "loader", size: "sm", class: "animate-spin" %>

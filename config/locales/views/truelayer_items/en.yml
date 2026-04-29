@@ -68,6 +68,7 @@ en:
       syncing: "Syncing..."
       reconnect_required: Reconnect required
       token_expired: Token expired — reconnect to refresh
+      consent_expires: "Access expires %{date}"
       last_synced: "Last synced %{time} ago"
       never_synced: Never synced
       reconnect: Reconnect

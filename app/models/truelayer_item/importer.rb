@@ -14,6 +14,7 @@ class TruelayerItem::Importer
 
     psu_ip = truelayer_item.last_psu_ip
 
+    update_consent_expiry(provider, psu_ip: psu_ip)
     upsert_accounts(provider, psu_ip: psu_ip)
     update_pending_account_setup!
 
@@ -35,6 +36,14 @@ class TruelayerItem::Importer
   end
 
   private
+
+    def update_consent_expiry(provider, psu_ip:)
+      me = provider.get_me(psu_ip: psu_ip)
+      expiry = me&.dig(:consent_expiry_time).presence
+      truelayer_item.update!(consent_expires_at: Time.zone.parse(expiry)) if expiry
+    rescue => e
+      Rails.logger.warn "TruelayerItem::Importer — could not fetch consent expiry: #{e.message}"
+    end
 
     def upsert_accounts(provider, psu_ip:)
       begin
