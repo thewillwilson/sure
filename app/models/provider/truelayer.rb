@@ -69,6 +69,26 @@ class Provider::Truelayer
     raise TruelayerError.new("Request failed: #{e.message}", :request_failed)
   end
 
+  def extend_connection(refresh_token:, redirect_uri:, state: nil)
+    body = {
+      client_id:                   client_id,
+      client_secret:               client_secret,
+      refresh_token:               refresh_token,
+      redirect_uri:                redirect_uri,
+      user_has_reconfirmed_consent: false
+    }
+    body[:state] = state if state.present?
+
+    response = self.class.post(
+      "#{auth_base}/v1/extendconnection",
+      headers: { "Content-Type" => "application/json" },
+      body:    body.to_json
+    )
+    handle_response(response)
+  rescue SocketError, Net::OpenTimeout, Net::ReadTimeout => e
+    raise TruelayerError.new("Request failed: #{e.message}", :request_failed)
+  end
+
   def get_accounts(psu_ip: nil)
     with_rate_limit_retry do
       response = self.class.get(

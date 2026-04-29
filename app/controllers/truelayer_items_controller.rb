@@ -188,6 +188,28 @@ class TruelayerItemsController < ApplicationController
   def reauthorize
     nonce = SecureRandom.hex(32)
     session[:truelayer_oauth_pending] = { "item_id" => @truelayer_item.id.to_s, "state" => nonce, "type" => "reauth", "admin" => true }
+
+    if @truelayer_item.refresh_token.present?
+      result = truelayer_provider(@truelayer_item).extend_connection(
+        refresh_token: @truelayer_item.refresh_token,
+        redirect_uri:  callback_truelayer_items_url,
+        state:         nonce
+      )
+
+      if result[:type].to_s == "no_action_needed"
+        session.delete(:truelayer_oauth_pending)
+        @truelayer_item.update!(status: :good)
+        redirect_to settings_providers_path, notice: t(".reauth_success"), status: :see_other
+        return
+      end
+
+      auth_uri = result[:auth_uri].presence
+      redirect_to auth_uri, allow_other_host: true and return if auth_uri
+    end
+
+    redirect_to authorize_url(@truelayer_item, nonce), allow_other_host: true
+  rescue => e
+    Rails.logger.error "TrueLayer reauthorize error: #{e.message}"
     redirect_to authorize_url(@truelayer_item, nonce), allow_other_host: true
   end
 
