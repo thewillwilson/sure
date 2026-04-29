@@ -228,3 +228,20 @@ en:
       enable_banking_panel:
         callback_url_instruction: "For the callback URL, use %{callback_url}."
         connection_error: Connection Error
+      truelayer_panel:
+        title: "TrueLayer (beta)"
+        connect: Connect TrueLayer
+        save: Save Configuration
+        update: Update Configuration
+        add_connection: Add Connection
+        setup_instructions: "Setup instructions:"
+        step_1_html: "Visit <a href=\"https://truelayer.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"link\">TrueLayer</a> and sign in to your developer console"
+        step_2_html: "Create an application and note your <strong>Client ID</strong> and <strong>Client Secret</strong>"
+        step_3_html: "Add the callback URL to your TrueLayer application's allowed redirect URIs: <span class=\"font-mono text-primary select-all\">%{callback_url}</span>"
+        step_4: "Enter your credentials below, click Save, then use \"Connect Bank\" to link your bank"
+        client_id_label: Client ID
+        client_id_placeholder: TrueLayer client_id
+        client_secret_label: Client Secret
+        client_secret_placeholder_new: Enter client secret
+        client_secret_placeholder_existing: Enter new secret to update
+        sandbox_label: Use sandbox environment

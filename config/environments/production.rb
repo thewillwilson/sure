@@ -48,6 +48,14 @@ Rails.application.configure do
   # Can be used together with config.force_ssl for Strict-Transport-Security and secure cookies.
   config.assume_ssl = ActiveModel::Type::Boolean.new.cast(ENV.fetch("RAILS_ASSUME_SSL", true))
 
+  # Trust additional reverse proxy IPs so request.remote_ip reflects the real user IP.
+  # Set TRUSTED_PROXIES to a comma-separated list of proxy CIDRs/IPs (e.g. "10.0.0.1,172.16.0.0/12").
+  if ENV["TRUSTED_PROXIES"].present?
+    config.action_dispatch.trusted_proxies =
+      ActionDispatch::RemoteIp::TRUSTED_PROXIES +
+      ENV["TRUSTED_PROXIES"].split(",").map { |ip| IPAddr.new(ip.strip) }
+  end
+
   # Log to Logtail if API key is present, otherwise log to STDOUT
   base_logger = if ENV["LOGTAIL_API_KEY"].present? && ENV["LOGTAIL_INGESTING_HOST"].present?
     Logtail::Logger.create_default_logger(

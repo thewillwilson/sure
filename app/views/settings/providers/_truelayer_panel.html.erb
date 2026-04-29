@@ -1,0 +1,64 @@
+<div class="space-y-4">
+  <div class="prose prose-sm text-secondary">
+    <p class="text-primary font-medium"><%= t("settings.providers.truelayer_panel.setup_instructions") %></p>
+    <ol>
+      <li><%= t("settings.providers.truelayer_panel.step_1_html").html_safe %></li>
+      <li><%= t("settings.providers.truelayer_panel.step_2_html").html_safe %></li>
+      <li><%= t("settings.providers.truelayer_panel.step_3_html", callback_url: callback_truelayer_items_url).html_safe %></li>
+      <li><%= t("settings.providers.truelayer_panel.step_4") %></li>
+    </ol>
+  </div>
+
+  <%
+    family = local_assigns[:family] || Current.family
+    truelayer_credential = family.truelayer_items.first_or_initialize
+    is_new_record = truelayer_credential.new_record?
+    connections = family.truelayer_items.where.not(access_token: nil).ordered
+  %>
+
+  <%= styled_form_with model: truelayer_credential,
+                       url: is_new_record ? truelayer_items_path : truelayer_item_path(truelayer_credential),
+                       scope: :truelayer_item,
+                       method: is_new_record ? :post : :patch,
+                       data: { turbo: true },
+                       class: "space-y-3" do |form| %>
+
+    <%= form.text_field :client_id,
+                        label: t("settings.providers.truelayer_panel.client_id_label"),
+                        placeholder: t("settings.providers.truelayer_panel.client_id_placeholder") %>
+
+    <%= form.password_field :client_secret,
+                            label: t("settings.providers.truelayer_panel.client_secret_label"),
+                            placeholder: is_new_record ? t("settings.providers.truelayer_panel.client_secret_placeholder_new") : t("settings.providers.truelayer_panel.client_secret_placeholder_existing") %>
+
+    <div class="flex items-center gap-2">
+      <%= form.check_box :sandbox %>
+      <%= form.label :sandbox, t("settings.providers.truelayer_panel.sandbox_label"), class: "text-sm text-secondary" %>
+    </div>
+
+    <div class="flex justify-end">
+      <%= form.submit is_new_record ? t("settings.providers.truelayer_panel.save") : t("settings.providers.truelayer_panel.update"),
+                      class: "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800" %>
+    </div>
+  <% end %>
+
+  <% if connections.any? %>
+    <div class="border-t border-primary pt-4 space-y-3" id="truelayer-connections-list">
+      <% connections.each do |item| %>
+        <%= render "truelayer_items/truelayer_item", truelayer_item: item %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if truelayer_credential.persisted? && truelayer_credential.credentials_configured? %>
+    <div class="<%= connections.any? ? "pt-2" : "border-t border-primary pt-4" %> flex justify-center">
+      <%= button_to authorize_truelayer_items_path,
+                    method: :post,
+                    class: "inline-flex items-center gap-2 justify-center rounded-lg px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 transition-colors",
+                    data: { turbo: false } do %>
+        <%= icon "plus", size: "sm" %>
+        <%= connections.any? ? t("settings.providers.truelayer_panel.add_connection") : t("settings.providers.truelayer_panel.connect_bank") %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

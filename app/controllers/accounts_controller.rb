@@ -21,6 +21,7 @@ class AccountsController < ApplicationController
     @snaptrade_items = visible_provider_items(family.snaptrade_items.ordered.includes(:syncs, :snaptrade_accounts))
     @indexa_capital_items = visible_provider_items(family.indexa_capital_items.ordered.includes(:syncs, :indexa_capital_accounts))
     @sophtron_items = visible_provider_items(family.sophtron_items.ordered.includes(:syncs, :sophtron_accounts))
+    @truelayer_items = visible_provider_items(family.truelayer_items.where.not(access_token: nil).ordered.includes(:syncs, :truelayer_accounts))
 
     # Build sync stats maps for all providers
     build_sync_stats_maps
@@ -334,6 +335,13 @@ class AccountsController < ApplicationController
       @indexa_capital_items.each do |item|
         latest_sync = item.syncs.ordered.first
         @indexa_capital_sync_stats_map[item.id] = latest_sync&.sync_stats || {}
+      end
+
+      # TrueLayer sync stats
+      @truelayer_sync_stats_map = {}
+      @truelayer_items.each do |item|
+        latest_sync = item.syncs.ordered.first
+        @truelayer_sync_stats_map[item.id] = latest_sync&.sync_stats || {}
       end
     end
 end

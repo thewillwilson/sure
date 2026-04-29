@@ -4,7 +4,8 @@ class SyncHourlyJob < ApplicationJob
 
   # Provider item classes that opt-in to hourly syncing
   HOURLY_SYNCABLES = [
-    CoinstatsItem # https://coinstats.app/api-docs/rate-limits#plan-limits
+    CoinstatsItem, # https://coinstats.app/api-docs/rate-limits#plan-limits
+    TruelayerItem
   ].freeze
 
   def perform
@@ -18,7 +19,7 @@ class SyncHourlyJob < ApplicationJob
   private
 
     def sync_items(syncable_class)
-      syncable_class.active.find_each do |item|
+      syncable_class.syncable.find_each do |item|
         item.sync_later
       rescue => e
         Rails.logger.error("Failed to sync #{syncable_class.name} #{item.id}: #{e.message}")

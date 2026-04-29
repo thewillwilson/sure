@@ -1,0 +1,84 @@
+---
+en:
+  truelayer_items:
+    new:
+      title: Link with TrueLayer
+      token_expires: "Token expires: %{date}"
+      unknown: Unknown
+      token_expired: Token expired — reconnect required
+      configured: Configured
+      ready_to_connect: Ready to connect a bank
+      reconnect: Reconnect
+      connect_bank: Connect Bank
+      not_configured_title: TrueLayer not configured
+      not_configured_body: Before you can link TrueLayer accounts, you need to configure your TrueLayer credentials.
+      setup_steps_title: Setup steps
+      setup_step_1: "Go to Settings → Providers"
+      setup_step_2: Find the TrueLayer section
+      setup_step_3: Enter your TrueLayer credentials and save
+      setup_step_4: Return here to connect a bank
+      go_to_settings: Go to Provider Settings
+    create:
+      success: TrueLayer credentials saved.
+    update:
+      success: TrueLayer credentials updated.
+    authorize:
+      no_credentials: "Please save your TrueLayer credentials first."
+      failed: "Failed to start TrueLayer authorization. Please try again."
+    destroy:
+      success: TrueLayer connection scheduled for deletion.
+      unlink_failed: "Some accounts could not be unlinked. Please try again."
+    callback:
+      authorization_failed: "TrueLayer authorization failed. Please try again."
+      reauth_success: "TrueLayer connection re-authorized successfully."
+      connect_success: "Bank connected. Your accounts are being imported."
+    complete_account_setup:
+      success: "Accounts connected and sync scheduled."
+    link_existing_account:
+      success: "Account linked successfully."
+      no_account_selected: "Please select a TrueLayer account to link."
+    setup_accounts:
+      syncing: "Accounts are still being imported. Please wait for the sync to finish."
+      title: Set up accounts
+      subtitle: Connect your imported accounts to Sure
+      or: "— or —"
+      link_existing: Link existing account
+      create_new: Create new account
+      skip: Skip
+      all_set_up: All accounts are set up
+      no_remaining: No accounts remaining to configure.
+      go_to_accounts: Go to Accounts
+      select_existing_placeholder: Select existing account...
+      existing_account_label: Existing account
+      remaining_accounts:
+        one: "%{count} account remaining after this one"
+        other: "%{count} accounts remaining after this one"
+    select_existing_account:
+      title: Link TrueLayer account
+      no_accounts: No existing accounts available to link.
+      link: Link
+      cancel: Cancel
+    truelayer_item:
+      deletion_in_progress: Deletion in progress
+      provider_name: TrueLayer
+      syncing: "Syncing..."
+      reconnect_required: Reconnect required
+      last_synced: "Last synced %{time} ago"
+      never_synced: Never synced
+      reconnect: Reconnect
+      sync: Sync
+      delete: Delete
+      setup_needed: Setup needed
+      unlinked_accounts_message:
+        one: "%{count} account imported from TrueLayer needs to be set up"
+        other: "%{count} accounts imported from TrueLayer need to be set up"
+      setup_accounts: Set up accounts
+      skipped_accounts_message:
+        one: "%{count} imported account was skipped"
+        other: "%{count} imported accounts were skipped"
+      review_skipped: Review skipped accounts
+      no_accounts_found: No accounts found
+      no_accounts_message: No accounts were found from TrueLayer. Try syncing again.
+    errors:
+      token_invalid: "TrueLayer token is not valid. Please re-authorize."
+      unexpected: "An unexpected error occurred. Please try again."

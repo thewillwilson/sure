@@ -32,6 +32,13 @@ class Settings::BankSyncController < ApplicationController
         rel: "noopener noreferrer"
       },
       {
+        name: "TrueLayer (beta)",
+        description: "UK and European bank connections via TrueLayer open banking APIs.",
+        path: "https://truelayer.com",
+        target: "_blank",
+        rel: "noopener noreferrer"
+      },
+      {
         name: "Sophtron (alpha)",
         description: "US & Canada bank, credit card, investment, loan, insurance, utility, and other connections.",
         path: "https://www.sophtron.com/",

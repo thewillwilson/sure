@@ -1,0 +1,77 @@
+<%= turbo_frame_tag "modal" do %>
+  <%= render DS::Dialog.new do |dialog| %>
+    <% dialog.with_header(title: t(".title")) %>
+    <% dialog.with_body do %>
+      <% if !@credentials_configured %>
+        <div class="space-y-4">
+          <div class="flex items-start gap-3">
+            <%= icon("alert-circle", class: "text-warning w-5 h-5 shrink-0 mt-0.5") %>
+            <div class="text-sm text-secondary">
+              <p class="font-medium text-primary mb-2"><%= t(".not_configured_title") %></p>
+              <p><%= t(".not_configured_body") %></p>
+            </div>
+          </div>
+
+          <div class="bg-surface rounded-lg p-4 space-y-2 text-sm">
+            <p class="font-medium text-primary"><%= t(".setup_steps_title") %></p>
+            <ol class="list-decimal list-inside space-y-1 text-secondary">
+              <li><%= t(".setup_step_1") %></li>
+              <li><%= t(".setup_step_2") %></li>
+              <li><%= t(".setup_step_3") %></li>
+              <li><%= t(".setup_step_4") %></li>
+            </ol>
+          </div>
+
+          <div class="mt-4">
+            <%= link_to settings_providers_path,
+                        class: "w-full inline-flex items-center justify-center rounded-lg font-medium whitespace-nowrap hidden md:inline-flex px-3 py-2 text-sm text-inverse bg-inverse hover:bg-inverse-hover",
+                        data: { turbo: false } do %>
+              <%= t(".go_to_settings") %>
+            <% end %>
+          </div>
+        </div>
+      <% else %>
+        <div class="space-y-3">
+          <% @truelayer_items.each do |item| %>
+            <div class="flex items-center justify-between p-3 rounded-lg bg-container border border-primary">
+              <div class="flex items-center gap-3">
+                <% if item.token_valid? %>
+                  <div class="w-2 h-2 bg-success rounded-full"></div>
+                  <div>
+                    <p class="text-sm font-medium text-primary"><%= item.name %></p>
+                    <p class="text-xs text-secondary"><%= t(".token_expires", date: item.token_expires_at&.strftime("%b %d, %Y") || t(".unknown")) %></p>
+                  </div>
+                <% else %>
+                  <div class="w-2 h-2 bg-warning rounded-full"></div>
+                  <div>
+                    <p class="text-sm font-medium text-primary"><%= item.name %></p>
+                    <p class="text-xs text-destructive"><%= t(".token_expired") %></p>
+                  </div>
+                <% end %>
+              </div>
+
+              <% if item.token_expired? %>
+                <%= button_to reauthorize_truelayer_item_path(item),
+                              method: :post,
+                              class: "inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-medium text-white bg-warning hover:opacity-90 transition-colors",
+                              data: { turbo: false } do %>
+                  <%= t(".reconnect") %>
+                <% end %>
+              <% end %>
+            </div>
+          <% end %>
+
+          <div class="flex justify-center pt-2">
+            <%= button_to authorize_truelayer_items_path,
+                          method: :post,
+                          class: "inline-flex items-center gap-2 justify-center rounded-lg px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 transition-colors",
+                          data: { turbo: false } do %>
+              <%= icon "plus", size: "sm" %>
+              <%= t(".connect_bank") %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>
