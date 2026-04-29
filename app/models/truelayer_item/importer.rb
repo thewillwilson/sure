@@ -83,9 +83,17 @@ class TruelayerItem::Importer
           next unless current.present?
 
           if ta.card?
-            # TrueLayer returns current as negative for cards (debt convention); abs gives the amount owed
-            account.credit_card&.update!(available_credit: balance_data[:available].to_d) if balance_data[:available].present?
-            result = account.set_current_balance(current.to_d.abs)
+            available     = balance_data[:available]
+            credit_limit  = balance_data[:credit_limit]
+            display_balance = if available.present?
+              available.to_d
+            elsif credit_limit.present?
+              [ credit_limit.to_d - current.to_d.abs, 0 ].max
+            end
+            next unless display_balance
+
+            account.credit_card&.update!(available_credit: display_balance)
+            result = account.set_current_balance(display_balance)
           else
             result = account.set_current_balance(current.to_d)
           end
