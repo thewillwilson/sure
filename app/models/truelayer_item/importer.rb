@@ -38,6 +38,8 @@ class TruelayerItem::Importer
   private
 
     def update_consent_expiry(provider, psu_ip:)
+      return if truelayer_item.consent_expires_at.present?
+
       me = provider.get_me(psu_ip: psu_ip)
       expiry = me&.dig(:consent_expiry_time).presence
       truelayer_item.update!(consent_expires_at: Time.zone.parse(expiry)) if expiry
