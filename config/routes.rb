@@ -106,6 +106,7 @@ Rails.application.routes.draw do
     member do
       post :sync
       post :reauthorize
+      post :refresh_token
       get  :setup_accounts
       post :complete_account_setup
       post :reset_skipped

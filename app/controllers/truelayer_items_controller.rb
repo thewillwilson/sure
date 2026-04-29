@@ -1,6 +1,6 @@
 class TruelayerItemsController < ApplicationController
-  before_action :set_truelayer_item, only: [ :update, :destroy, :sync, :reauthorize, :setup_accounts, :complete_account_setup, :reset_skipped ]
-  before_action :require_admin!, only: [ :new, :create, :authorize, :update, :destroy, :sync, :reauthorize, :setup_accounts, :complete_account_setup, :reset_skipped, :select_existing_account, :link_existing_account ]
+  before_action :set_truelayer_item, only: [ :update, :destroy, :sync, :reauthorize, :refresh_token, :setup_accounts, :complete_account_setup, :reset_skipped ]
+  before_action :require_admin!, only: [ :new, :create, :authorize, :update, :destroy, :sync, :reauthorize, :refresh_token, :setup_accounts, :complete_account_setup, :reset_skipped, :select_existing_account, :link_existing_account ]
   skip_before_action :verify_authenticity_token, only: [ :callback ]
 
   def new
@@ -183,6 +183,14 @@ class TruelayerItemsController < ApplicationController
       .update_all(setup_skipped: false)
     @truelayer_item.update!(pending_account_setup: true)
     redirect_to setup_accounts_truelayer_item_path(@truelayer_item), status: :see_other
+  end
+
+  def refresh_token
+    @truelayer_item.refresh_tokens!
+    redirect_to settings_providers_path, notice: t(".success"), status: :see_other
+  rescue => e
+    Rails.logger.error "TrueLayer token refresh error: #{e.message}"
+    redirect_to settings_providers_path, alert: t(".failed"), status: :see_other
   end
 
   def reauthorize

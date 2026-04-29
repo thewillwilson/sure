@@ -49,11 +49,18 @@
 
       <% if Current.user&.admin? %>
         <div class="flex items-center gap-2">
-          <% if truelayer_item.requires_update? || truelayer_item.token_expired? %>
+          <% if truelayer_item.requires_update? %>
             <%= button_to reauthorize_truelayer_item_path(truelayer_item),
                           method: :post,
                           class: "inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-warning hover:opacity-90 transition-colors",
                           data: { turbo: false } do %>
+              <%= icon "refresh-cw", size: "sm" %>
+              <%= t(".reconnect") %>
+            <% end %>
+          <% elsif truelayer_item.token_expired? %>
+            <%= button_to refresh_token_truelayer_item_path(truelayer_item),
+                          method: :post,
+                          class: "inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-warning hover:opacity-90 transition-colors" do %>
               <%= icon "refresh-cw", size: "sm" %>
               <%= t(".reconnect") %>
             <% end %>
