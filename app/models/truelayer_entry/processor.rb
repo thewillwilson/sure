@@ -57,7 +57,9 @@ class TruelayerEntry::Processor
     end
 
     def amount
-      raw = BigDecimal(data[:amount].to_s).abs
+      raw_value = data[:amount]
+      decimal_str = raw_value.is_a?(Float) ? format("%.10f", raw_value) : raw_value.to_s
+      raw = BigDecimal(decimal_str).abs
       # Sure convention: positive = outflow (debit/expense), negative = inflow (credit/income)
       # TrueLayer: CREDIT = money into account (inflow = negative in Sure), DEBIT = money out (outflow = positive)
       data[:transaction_type] == "CREDIT" ? -raw : raw

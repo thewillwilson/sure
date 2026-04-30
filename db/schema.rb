@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_04_28_211642) do
+ActiveRecord::Schema[7.2].define(version: 2026_04_30_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1582,7 +1582,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_28_211642) do
     t.string "account_type"
     t.string "currency", null: false
     t.boolean "setup_skipped", default: false, null: false
-    t.jsonb "raw_payload"
+    t.text "raw_payload"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index [ "account_id" ], name: "index_truelayer_accounts_on_account_id"
@@ -1602,8 +1602,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_28_211642) do
     t.text "refresh_token"
     t.datetime "token_expires_at"
     t.boolean "sandbox", default: false, null: false
-    t.string "last_psu_ip"
-    t.datetime "sync_start_date"
+    t.text "last_psu_ip"
+    t.date "sync_start_date"
     t.datetime "consent_expires_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

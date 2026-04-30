@@ -80,6 +80,72 @@ class TruelayerItemTest < ActiveSupport::TestCase
     refute_includes TruelayerItem.syncable.map(&:id), item.id
   end
 
+  test "refresh_tokens! transitions to requires_update on invalid_grant response" do
+    item = TruelayerItem.create!(
+      family:        @family,
+      name:          "Invalid Grant Test",
+      client_id:     "cid",
+      client_secret: "csec",
+      access_token:  "expired_access",
+      refresh_token: "expired_refresh"
+    )
+
+    Provider::Truelayer.any_instance.stubs(:refresh_access_token).raises(
+      Provider::Truelayer::TruelayerError.new("invalid_grant: refresh token expired", :bad_request)
+    )
+
+    assert_raises(StandardError) { item.refresh_tokens! }
+    assert_equal "requires_update", item.reload.status
+  end
+
+  test "import_latest_truelayer_data triggers token refresh for legacy rows with access_token but no expiry" do
+    item = TruelayerItem.create!(
+      family:        @family,
+      name:          "Legacy Token",
+      client_id:     "cid",
+      client_secret: "csec",
+      access_token:  "legacy_access",
+      refresh_token: "legacy_refresh"
+    )
+
+    Provider::Truelayer.any_instance.stubs(:refresh_access_token).returns(
+      { access_token: "new_access", refresh_token: "new_refresh", expires_in: 3600 }
+    )
+    TruelayerItem::Importer.any_instance.stubs(:import).returns({ success: true })
+
+    item.import_latest_truelayer_data
+
+    assert_equal "new_access", item.reload.access_token
+    assert_not_nil item.reload.token_expires_at
+  end
+
+  test "unlink_all! destroys account provider links and reports results without error" do
+    item = TruelayerItem.create!(
+      family:        @family,
+      name:          "Unlink Test",
+      client_id:     "cid",
+      client_secret: "csec"
+    )
+    ta = item.truelayer_accounts.create!(
+      account_id:   "tl_unlink_001",
+      account_kind: "account",
+      name:         "Test Account",
+      currency:     "GBP"
+    )
+    account = accounts(:depository)
+    link = AccountProvider.create!(account: account, provider: ta)
+
+    results = nil
+    assert_difference "AccountProvider.count", -1 do
+      results = item.unlink_all!(dry_run: false)
+    end
+
+    assert_equal 1, results.length
+    assert_equal ta.id, results.first[:ta_id]
+    assert_includes results.first[:provider_link_ids], link.id
+    assert_nil results.first[:error]
+  end
+
   test "allows multiple active items with the same client_id for the same family" do
     TruelayerItem.create!(
       family:        @family,
@@ -96,5 +162,24 @@ class TruelayerItemTest < ActiveSupport::TestCase
     )
 
     assert second.valid?
+  end
+
+  test "import_latest_truelayer_data proceeds after successful token refresh even when new token is very short-lived" do
+    item = TruelayerItem.create!(
+      family:           @family,
+      name:             "Short Token",
+      client_id:        "cid",
+      client_secret:    "csec",
+      access_token:     "old_access",
+      refresh_token:    "old_refresh",
+      token_expires_at: 10.seconds.from_now
+    )
+
+    Provider::Truelayer.any_instance.stubs(:refresh_access_token)
+      .returns({ access_token: "new_access", refresh_token: "new_refresh", expires_in: 1 })
+
+    TruelayerItem::Importer.any_instance.expects(:import).once.returns({ success: true })
+
+    item.import_latest_truelayer_data
   end
 end

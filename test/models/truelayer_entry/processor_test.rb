@@ -282,4 +282,19 @@ class TruelayerEntry::ProcessorTest < ActiveSupport::TestCase
     assert_not_nil entry
     assert entry.transaction&.pending?, "Transaction with transaction_status: PENDING should be marked pending"
   end
+
+  test "float amount 10.99 is stored without precision loss" do
+    tx = {
+      transaction_id:   "txn_float_precision",
+      timestamp:        Date.current.iso8601,
+      amount:           10.99,
+      currency:         "GBP",
+      transaction_type: "DEBIT",
+      description:      "Float precision check"
+    }
+
+    TruelayerEntry::Processor.new(tx, truelayer_account: @truelayer_account).process
+    entry = @account.entries.find_by!(external_id: "truelayer_txn_float_precision")
+    assert_equal 10.99, entry.amount.to_f.abs
+  end
 end

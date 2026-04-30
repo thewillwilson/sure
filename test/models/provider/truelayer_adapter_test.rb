@@ -51,4 +51,10 @@ class Provider::TruelayerAdapterTest < ActiveSupport::TestCase
   test "can_delete_holdings? returns false" do
     assert_equal false, @adapter.can_delete_holdings?
   end
+
+  # TrueLayer's logo_uri field is unreliable (often missing or expired CDN links),
+  # so logo_url intentionally returns nil and falls back to institution name display.
+  test "logo_url returns nil as intentional fallback" do
+    assert_nil @adapter.logo_url
+  end
 end

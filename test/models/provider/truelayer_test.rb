@@ -71,4 +71,26 @@ class Provider::TruelayerTest < ActiveSupport::TestCase
     assert_equal :rate_limited, error.error_type
     assert_requested :get, "https://api.truelayer.com/data/v1/accounts", times: 3
   end
+
+  test "includes X-PSU-IP header in API requests when psu_ip is provided" do
+    stub_request(:get, "https://api.truelayer.com/data/v1/accounts")
+      .with(headers: { "X-PSU-IP" => "203.0.113.42" })
+      .to_return(status: 200, body: { results: [] }.to_json, headers: { "Content-Type" => "application/json" })
+
+    result = @provider.get_accounts(psu_ip: "203.0.113.42")
+
+    assert_equal [], result
+    assert_requested :get, "https://api.truelayer.com/data/v1/accounts",
+      headers: { "X-PSU-IP" => "203.0.113.42" }
+  end
+
+  test "omits X-PSU-IP header when psu_ip is blank" do
+    stub_request(:get, "https://api.truelayer.com/data/v1/accounts")
+      .to_return(status: 200, body: { results: [] }.to_json, headers: { "Content-Type" => "application/json" })
+
+    @provider.get_accounts(psu_ip: nil)
+
+    assert_not_requested :get, "https://api.truelayer.com/data/v1/accounts",
+      headers: { "X-PSU-IP" => /.*/ }
+  end
 end

@@ -24,10 +24,6 @@ module TruelayerItem::Provided
     access_token.present? && token_expires_at.present? && token_expires_at <= 30.seconds.from_now
   end
 
-  def token_lapsed?
-    access_token.present? && token_expires_at.present? && token_expires_at <= Time.current
-  end
-
   def refresh_tokens!
     with_lock do
       provider = Provider::Truelayer.new(

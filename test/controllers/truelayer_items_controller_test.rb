@@ -104,7 +104,8 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
     Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://auth.truelayer.com/reauth", success: true })
     post reauthorize_truelayer_item_url(@truelayer_item)
 
-    get callback_truelayer_items_url, params: { code: "auth_code", state: "wrong_nonce" }
+    real_nonce = session[:truelayer_oauth_pending]["state"]
+    get callback_truelayer_items_url, params: { code: "auth_code", state: "not_#{real_nonce}" }
 
     assert_redirected_to settings_providers_path
     assert flash[:alert].present?
@@ -238,6 +239,68 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to setup_accounts_truelayer_item_path(@truelayer_item)
     assert flash[:alert].present?
     assert_not truelayer_account.reload.setup_skipped
+  end
+
+  # destroy transactional tests
+
+  test "destroy with actual unlink rolls back partial unlinks when an account errors" do
+    ta1 = @truelayer_item.truelayer_accounts.create!(
+      account_id: "tl_ta1", account_kind: "account", name: "Account 1", currency: "GBP"
+    )
+    ta2 = @truelayer_item.truelayer_accounts.create!(
+      account_id: "tl_ta2", account_kind: "account", name: "Account 2", currency: "GBP"
+    )
+    account1 = accounts(:depository)
+    account2 = accounts(:credit_card)
+    AccountProvider.create!(account: account1, provider: ta1)
+    link2 = AccountProvider.create!(account: account2, provider: ta2)
+
+    # Simulate ta1 unlinking OK but ta2 failing
+    TruelayerItem.any_instance.stubs(:unlink_all!).returns([
+      { ta_id: ta1.id, name: ta1.name, provider_link_ids: [] },
+      { ta_id: ta2.id, name: ta2.name, provider_link_ids: [ link2.id ], error: "DB error" }
+    ])
+
+    delete truelayer_item_url(@truelayer_item)
+
+    assert_redirected_to settings_providers_path
+    assert flash[:alert].present?
+  end
+
+  # reauth consent_expires_at reset tests
+
+  test "callback with reauth type clears consent_expires_at so importer re-fetches it" do
+    @truelayer_item.update!(
+      access_token:       "old_tok",
+      refresh_token:      "ref",
+      status:             :requires_update,
+      consent_expires_at: 1.year.from_now
+    )
+    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://auth.truelayer.com/reauth", success: true })
+    post reauthorize_truelayer_item_url(@truelayer_item)
+    nonce = session[:truelayer_oauth_pending]["state"]
+
+    Provider::Truelayer.any_instance.stubs(:exchange_code).returns(
+      access_token: "new_tok", refresh_token: "new_refresh", expires_in: 3600
+    )
+
+    get callback_truelayer_items_url, params: { code: "auth_code", state: nonce }
+
+    assert_nil @truelayer_item.reload.consent_expires_at
+  end
+
+  # reauthorize rescue tests
+
+  test "reauthorize redirects to providers with alert when all redirect attempts fail" do
+    @truelayer_item.update!(access_token: "tok", refresh_token: "ref", status: :requires_update)
+    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).raises(
+      Provider::Truelayer::TruelayerError.new("Network error", :request_failed)
+    )
+
+    post reauthorize_truelayer_item_url(@truelayer_item)
+
+    assert_redirected_to settings_providers_path
+    assert flash[:alert].present?
   end
 
   # Admin authorization tests

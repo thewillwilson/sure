@@ -27,6 +27,8 @@ en:
     destroy:
       success: TrueLayer connection scheduled for deletion.
       unlink_failed: "Some accounts could not be unlinked. Please try again."
+    reauthorize:
+      failed: "Failed to start re-authorization. Please reconnect."
     refresh_token:
       success: "TrueLayer token refreshed successfully."
       failed: "Failed to refresh TrueLayer token. Please reconnect."

@@ -1,7 +1,6 @@
 class TruelayerItemsController < ApplicationController
   before_action :set_truelayer_item, only: [ :update, :destroy, :sync, :reauthorize, :refresh_token, :setup_accounts, :complete_account_setup, :reset_skipped ]
   before_action :require_admin!, only: [ :new, :create, :authorize, :update, :destroy, :sync, :reauthorize, :refresh_token, :setup_accounts, :complete_account_setup, :reset_skipped, :select_existing_account, :link_existing_account ]
-  skip_before_action :verify_authenticity_token, only: [ :callback ]
 
   def new
     @credentials_configured = Current.family.truelayer_items.where.not(client_id: nil).exists?
@@ -28,13 +27,21 @@ class TruelayerItemsController < ApplicationController
   end
 
   def destroy
-    results = @truelayer_item.unlink_all!(dry_run: false)
-    if results.any? { |r| r[:error] }
-      redirect_to settings_providers_path, alert: t(".unlink_failed"), status: :see_other
-      return
+    had_errors = false
+    ActiveRecord::Base.transaction do
+      results = @truelayer_item.unlink_all!(dry_run: false)
+      if results.any? { |r| r[:error] }
+        had_errors = true
+        raise ActiveRecord::Rollback
+      end
+      @truelayer_item.destroy_later
     end
-    @truelayer_item.destroy_later
-    redirect_to settings_providers_path, notice: t(".success"), status: :see_other
+
+    if had_errors
+      redirect_to settings_providers_path, alert: t(".unlink_failed"), status: :see_other
+    else
+      redirect_to settings_providers_path, notice: t(".success"), status: :see_other
+    end
   end
 
   def sync
@@ -112,10 +119,11 @@ class TruelayerItemsController < ApplicationController
 
     if pending["type"] == "reauth"
       @truelayer_item.update!(
-        access_token:     result[:access_token],
-        refresh_token:    result[:refresh_token],
-        token_expires_at: Time.current + result[:expires_in].to_i.seconds,
-        status:           :good
+        access_token:       result[:access_token],
+        refresh_token:      result[:refresh_token],
+        token_expires_at:   Time.current + result[:expires_in].to_i.seconds,
+        consent_expires_at: nil,
+        status:             :good
       )
       redirect_to settings_providers_path, notice: t(".reauth_success"), status: :see_other
     else
@@ -148,7 +156,7 @@ class TruelayerItemsController < ApplicationController
   end
 
   def complete_account_setup
-    if params[:account_id] == ""
+    if params[:account_id].blank?
       redirect_to setup_accounts_truelayer_item_path(@truelayer_item),
                   alert: t(".select_account_required"),
                   status: :see_other
@@ -209,7 +217,7 @@ class TruelayerItemsController < ApplicationController
     redirect_to authorize_url(@truelayer_item, nonce), allow_other_host: true
   rescue => e
     Rails.logger.error "TrueLayer reauthorize error: #{e.message}"
-    redirect_to authorize_url(@truelayer_item, nonce), allow_other_host: true
+    redirect_to settings_providers_path, alert: t(".failed"), status: :see_other
   end
 
   def select_existing_account

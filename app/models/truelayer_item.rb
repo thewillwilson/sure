@@ -8,6 +8,7 @@ class TruelayerItem < ApplicationRecord
     encrypts :client_secret
     encrypts :access_token
     encrypts :refresh_token
+    encrypts :last_psu_ip
   end
 
   validates :name,          presence: true
@@ -19,6 +20,7 @@ class TruelayerItem < ApplicationRecord
   has_many :truelayer_accounts, dependent: :destroy
   has_many :accounts, through: :truelayer_accounts
 
+  # sync_start_date is persisted but has no UI yet; reserved for a future "sync from date" feature.
   scope :active,       -> { where(scheduled_for_deletion: false) }
   scope :syncable,     -> { active.where(status: :good).where.not(access_token: nil) }
   scope :ordered,      -> { order(created_at: :desc) }
@@ -35,9 +37,10 @@ class TruelayerItem < ApplicationRecord
       raise StandardError.new("TrueLayer token not configured")
     end
 
-    refresh_tokens! if token_expired?
+    refreshed = token_expired? || (access_token.present? && token_expires_at.nil?)
+    refresh_tokens! if refreshed
 
-    unless token_valid?
+    unless refreshed || token_valid?
       Rails.logger.error "TruelayerItem #{id} - Cannot import: TrueLayer token invalid — re-authorization required"
       raise StandardError.new("TrueLayer token invalid — re-authorization required")
     end

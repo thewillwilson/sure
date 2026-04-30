@@ -216,7 +216,7 @@ class Provider::Truelayer
 
     def parse_body(response)
       return {} if response.body.blank?
-      JSON.parse(response.body, symbolize_names: true)
+      JSON.parse(response.body, symbolize_names: true, decimal_class: BigDecimal)
     rescue JSON::ParserError => e
       Rails.logger.error "TrueLayer API: Failed to parse response: #{e.message}"
       raise TruelayerError.new("Failed to parse response: #{e.message}", :parse_error)
@@ -230,9 +230,7 @@ class Provider::Truelayer
         raise unless e.error_type == :rate_limited
         attempts += 1
         raise if attempts >= max_retries
-        wait = e.retry_after || (2**attempts)
-        Rails.logger.warn "TrueLayer: rate limited, retrying in #{wait}s (attempt #{attempts}/#{max_retries})"
-        sleep(wait)
+        Rails.logger.warn "TrueLayer: rate limited, retrying immediately (attempt #{attempts}/#{max_retries})"
         retry
       end
     end
