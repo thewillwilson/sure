@@ -11,7 +11,7 @@
 
   <%
     family = local_assigns[:family] || Current.family
-    truelayer_credential = family.truelayer_items.first_or_initialize
+    truelayer_credential = family.truelayer_items.where.not(client_id: nil).order(:created_at).last || family.truelayer_items.new
     is_new_record = truelayer_credential.new_record?
     connections = family.truelayer_items.where.not(access_token: nil).ordered
   %>

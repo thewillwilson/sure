@@ -20,7 +20,7 @@ class TruelayerItem < ApplicationRecord
   has_many :accounts, through: :truelayer_accounts
 
   scope :active,       -> { where(scheduled_for_deletion: false) }
-  scope :syncable,     -> { active.where.not(access_token: nil) }
+  scope :syncable,     -> { active.where(status: :good).where.not(access_token: nil) }
   scope :ordered,      -> { order(created_at: :desc) }
   scope :needs_update, -> { where(status: :requires_update) }
 

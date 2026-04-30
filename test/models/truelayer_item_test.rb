@@ -68,6 +68,18 @@ class TruelayerItemTest < ActiveSupport::TestCase
     item.refresh_tokens!
   end
 
+  test "syncable scope excludes items with requires_update status" do
+    item = TruelayerItem.create!(
+      family:        @family,
+      name:          "Needs Reauth",
+      client_id:     "cid",
+      client_secret: "csec",
+      access_token:  "tok",
+      status:        :requires_update
+    )
+    refute_includes TruelayerItem.syncable.map(&:id), item.id
+  end
+
   test "allows multiple active items with the same client_id for the same family" do
     TruelayerItem.create!(
       family:        @family,
