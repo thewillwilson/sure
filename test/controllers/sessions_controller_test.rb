@@ -678,7 +678,6 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_response :success
   end
-end
 
   # ── SSO auto-redirect ──
 
@@ -705,7 +704,7 @@ end
 
     get new_session_path
     assert_response :success
-    assert_no_match %r{action="/auth/authentik"}, @response.body
+    assert_no_match %r{id="sso_form"}, @response.body
   end
 
   test "does not auto-redirect when multiple SSO providers" do
@@ -718,7 +717,7 @@ end
 
     get new_session_path
     assert_response :success
-    assert_no_match %r{action="/auth/authentik"}, @response.body
+    assert_no_match %r{id="sso_form"}, @response.body
   end
 
   test "does not auto-redirect when toggle is off" do
@@ -730,5 +729,6 @@ end
 
     get new_session_path
     assert_response :success
-    assert_no_match %r{action="/auth/authentik"}, @response.body
+    assert_no_match %r{id="sso_form"}, @response.body
+end
 end

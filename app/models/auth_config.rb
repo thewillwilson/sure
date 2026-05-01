@@ -83,6 +83,8 @@ class AuthConfig
 
     def sso_auto_redirect?
       !!Setting.sso_auto_redirect
+    rescue ActiveRecord::StatementInvalid, ActiveRecord::NoDatabaseError
+      false
     end
   end
 end

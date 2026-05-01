@@ -41,7 +41,6 @@ class SessionsController < ApplicationController
       if providers.size == 1 && !AuthConfig.local_login_form_visible? && AuthConfig.sso_auto_redirect?
         @provider = providers.first[:name].to_s
         render "mobile_sso_start"
-        return
       end
     end
   end
