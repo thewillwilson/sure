@@ -29,7 +29,7 @@ class TruelayerItem < ApplicationRecord
     DestroyJob.perform_later(self)
   end
 
-  def import_latest_truelayer_data
+  def import_latest_truelayer_data(balances_only: false)
     unless credentials_configured?
       Rails.logger.error "TruelayerItem #{id} - Cannot import: TrueLayer token not configured"
       raise StandardError.new("TrueLayer token not configured")
@@ -42,7 +42,7 @@ class TruelayerItem < ApplicationRecord
       raise StandardError.new("TrueLayer token invalid — re-authorization required")
     end
 
-    TruelayerItem::Importer.new(self).import
+    TruelayerItem::Importer.new(self).import(balances_only: balances_only)
   rescue => e
     Rails.logger.error "TruelayerItem #{id} - Failed to import data: #{e.message}"
     raise

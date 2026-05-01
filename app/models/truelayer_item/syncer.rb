@@ -22,11 +22,21 @@ class TruelayerItem::Syncer
       end
     end
 
-    sync.update!(status_text: "Importing from TrueLayer...") if sync.respond_to?(:status_text)
-    import_result = truelayer_item.import_latest_truelayer_data
+    if sync.respond_to?(:balances_only?) && sync.balances_only?
+      sync.update!(status_text: "Discovering accounts (balances only)...") if sync.respond_to?(:status_text)
+      import_result = truelayer_item.import_latest_truelayer_data(balances_only: true)
+    else
+      sync.update!(status_text: "Importing from TrueLayer...") if sync.respond_to?(:status_text)
+      import_result = truelayer_item.import_latest_truelayer_data
+    end
 
     unless import_result[:success]
       raise StandardError.new(import_result[:error].presence || "Import failed")
+    end
+
+    # Auto-clear requires_update on successful sync
+    if truelayer_item.status == "requires_update"
+      truelayer_item.update!(status: :good)
     end
 
     sync.update!(status_text: "Checking account configuration...") if sync.respond_to?(:status_text)
@@ -53,11 +63,21 @@ class TruelayerItem::Syncer
 
     collect_health_stats(sync, errors: nil)
   rescue => e
-    collect_health_stats(sync, errors: [ { message: e.message, category: "sync_error" } ])
+    category = classify_error(e)
+    collect_health_stats(sync, errors: [ { message: e.message, category: category } ])
     raise
   end
 
   def perform_post_sync
     # no-op
   end
+
+  private
+
+    def classify_error(error)
+      return "auth" if error.is_a?(Provider::Truelayer::TruelayerError) && [ :unauthorized, :sca_exceeded, :forbidden ].include?(error.error_type)
+      return "network" if error.is_a?(Provider::Truelayer::TruelayerError) && [ :request_failed, :rate_limited ].include?(error.error_type)
+      return "api" if error.is_a?(Provider::Truelayer::TruelayerError) && [ :bad_request, :not_found, :not_implemented, :fetch_failed, :parse_error ].include?(error.error_type)
+      "other"
+    end
 end
