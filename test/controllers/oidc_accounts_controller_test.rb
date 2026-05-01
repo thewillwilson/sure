@@ -244,6 +244,56 @@ class OidcAccountsControllerTest < ActionController::TestCase
     assert new_user.sso_only?, "JIT user should be SSO-only"
   end
 
+  # create_link local login guard tests
+  test "create_link allows user with local_admin_override to link when local login is disabled" do
+    super_admin = users(:sure_support_staff)
+    sa_auth = {
+      "provider" => "openid_connect",
+      "uid" => "super-admin-uid-123",
+      "email" => super_admin.email,
+      "name" => "Support Admin",
+      "first_name" => "Support",
+      "last_name" => "Admin"
+    }
+    session[:pending_oidc_auth] = sa_auth
+
+    AuthConfig.stubs(:local_login_enabled?).returns(false)
+    AuthConfig.stubs(:local_admin_override_enabled?).returns(true)
+
+    post :create_link, params: {
+      email: super_admin.email,
+      password: user_password_test
+    }
+
+    assert_redirected_to root_path
+  end
+
+  test "create_link redirects when local login is disabled and user has no override" do
+    session[:pending_oidc_auth] = pending_auth
+
+    AuthConfig.stubs(:local_login_enabled?).returns(false)
+    AuthConfig.stubs(:local_admin_override_enabled?).returns(false)
+
+    post :create_link, params: {
+      email: @user.email,
+      password: user_password_test
+    }
+
+    assert_redirected_to settings_security_path
+    assert_equal t("oidc_accounts.local_login_disabled"), flash[:alert]
+  end
+
+  test "create_link proceeds normally when local login is enabled" do
+    session[:pending_oidc_auth] = pending_auth
+
+    post :create_link, params: {
+      email: @user.email,
+      password: user_password_test
+    }
+
+    assert_redirected_to root_path
+  end
+
   test "JIT user cannot authenticate with local password" do
     session[:pending_oidc_auth] = new_user_auth
 

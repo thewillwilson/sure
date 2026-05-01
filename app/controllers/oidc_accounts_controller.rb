@@ -1,5 +1,6 @@
 class OidcAccountsController < ApplicationController
   skip_authentication only: [ :link, :create_link, :new_user, :create_user ]
+  before_action :require_local_login_allowed!, only: :create_link
   layout "auth"
 
   def link
@@ -173,6 +174,14 @@ class OidcAccountsController < ApplicationController
   end
 
   private
+
+    def require_local_login_allowed!
+      return if AuthConfig.local_login_enabled?
+      user = current_user || User.find_by(email: params[:email])
+      unless AuthConfig.local_login_allowed_for?(user)
+        redirect_to settings_security_path, alert: t("oidc_accounts.local_login_disabled")
+      end
+    end
 
     # Convert pending auth hash to OmniAuth-like structure
     def build_auth_hash(pending_auth)
