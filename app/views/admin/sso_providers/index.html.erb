@@ -14,20 +14,20 @@
         </div>
 
         <%= form.toggle :local_login_enabled,
-                        checked: Setting.local_login_enabled,
+                        checked: @local_login_enabled,
                         data: { auto_submit_form_target: "auto" } %>
       </div>
 
       <!-- Auto-redirect toggle (visually dimmed until local login is off) -->
-      <div class="flex items-center justify-between <%= 'opacity-50' if Setting.local_login_enabled %>">
+      <div class="flex items-center justify-between <%= 'opacity-50 cursor-not-allowed' if @local_login_enabled %>">
         <div class="space-y-1">
           <p class="text-sm font-medium text-primary"><%= t(".login_behaviour.auto_redirect_label") %></p>
           <p class="text-secondary text-sm"><%= t(".login_behaviour.auto_redirect_help") %></p>
         </div>
 
         <%= form.toggle :sso_auto_redirect,
-                        checked: Setting.sso_auto_redirect,
-                        disabled: Setting.local_login_enabled,
+                        checked: @sso_auto_redirect,
+                        disabled: @local_login_enabled,
                         data: { auto_submit_form_target: "auto" } %>
       </div>
     <% end %>

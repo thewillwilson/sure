@@ -7,6 +7,8 @@ module Admin
     def index
       authorize SsoProvider
       @sso_providers = policy_scope(SsoProvider).order(:name)
+      @local_login_enabled = Setting.local_login_enabled
+      @sso_auto_redirect = Setting.sso_auto_redirect
 
       # Load runtime providers (from YAML/env) that might not be in the database
       # This helps show users that legacy providers are active but not manageable via UI
