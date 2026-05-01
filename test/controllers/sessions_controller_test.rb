@@ -220,6 +220,28 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Could not authenticate via OpenID Connect.", flash[:alert]
   end
 
+  test "rejects SSO login when stored issuer does not match current provider config" do
+    oidc_identity = oidc_identities(:bob_google)
+    oidc_identity.update!(issuer: "https://old-issuer.example.com")
+
+    Rails.configuration.x.auth.stubs(:sso_providers).returns([
+      { name: "openid_connect", strategy: "openid_connect", issuer: "https://current-issuer.example.com" }
+    ])
+
+    setup_omniauth_mock(
+      provider: oidc_identity.provider,
+      uid: oidc_identity.uid,
+      email: "bob@bobdylan.com",
+      name: "Bob Dylan"
+    )
+
+    get "/auth/openid_connect/callback"
+
+    assert_redirected_to new_session_path
+    assert_equal t("sessions.openid_connect.issuer_mismatch"), flash[:alert]
+    assert_not Session.exists?(user_id: oidc_identity.user_id)
+  end
+
   # ── Mobile SSO: mobile_sso_start ──
 
   test "mobile_sso_start renders auto-submit form for valid provider" do

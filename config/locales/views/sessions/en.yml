@@ -11,6 +11,7 @@ en:
     openid_connect:
       account_linked: "Account successfully linked to %{provider}"
       failed: Could not authenticate via OpenID Connect.
+      issuer_mismatch: "Authentication failed: SSO provider configuration has changed. Please contact an administrator."
     failure:
       failed: Could not authenticate.
       sso_provider_unavailable: "The SSO provider is currently unavailable. Please try again later or contact an administrator."

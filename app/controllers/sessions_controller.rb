@@ -166,6 +166,13 @@ class SessionsController < ApplicationController
     oidc_identity = OidcIdentity.find_by(provider: auth.provider, uid: auth.uid)
 
     if oidc_identity
+      unless oidc_identity.issuer_matches_config?
+        config_issuer = oidc_identity.provider_config&.dig(:issuer)
+        Rails.logger.warn("[SSO] Issuer mismatch: user_id=#{oidc_identity.user_id} stored=#{oidc_identity.issuer} config=#{config_issuer}")
+        redirect_to new_session_path, alert: t("sessions.openid_connect.issuer_mismatch")
+        return
+      end
+
       # Existing OIDC identity found - authenticate the user
       user = oidc_identity.user
       oidc_identity.record_authentication!
