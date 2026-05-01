@@ -100,8 +100,13 @@ module Admin
 
     def update_settings
       authorize SsoProvider
+
+      if params.dig(:setting, :local_login_enabled).present? && params.dig(:setting, :local_login_enabled) != "1" && AuthConfig.sso_providers.empty?
+        redirect_to admin_sso_providers_path, alert: t(".local_login_disabled_no_sso")
+        return
+      end
+
       Setting.local_login_enabled = params.dig(:setting, :local_login_enabled) == "1" if params.dig(:setting, :local_login_enabled).present?
-      
       Setting.sso_auto_redirect = params.dig(:setting, :sso_auto_redirect) == "1" if params.dig(:setting, :sso_auto_redirect).present?
       redirect_to admin_sso_providers_path, notice: t(".settings_updated")
     end
