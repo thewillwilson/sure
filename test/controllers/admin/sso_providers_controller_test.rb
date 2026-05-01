@@ -5,6 +5,89 @@ class Admin::SsoProvidersControllerTest < ActionDispatch::IntegrationTest
     sign_in users(:sure_support_staff)
   end
 
+  test "destroy auto-enables local login and disables sso_auto_redirect when last enabled provider is deleted while local login is disabled" do
+    original_local_login = Setting.local_login_enabled
+    original_sso_auto_redirect = Setting.sso_auto_redirect
+
+    provider = SsoProvider.create!(
+      strategy: "openid_connect",
+      name: "test_provider",
+      label: "Test Provider",
+      enabled: true,
+      issuer: "https://example.com",
+      client_id: "client",
+      client_secret: "secret"
+    )
+
+    Setting.local_login_enabled = false
+    Setting.sso_auto_redirect = true
+
+    assert_difference "SsoProvider.count", -1 do
+      delete admin_sso_provider_url(provider)
+    end
+
+    assert_redirected_to admin_sso_providers_path
+    assert Setting.local_login_enabled, "local login should be auto-enabled"
+    assert_not Setting.sso_auto_redirect, "sso_auto_redirect should be auto-disabled"
+    assert_equal I18n.t("admin.sso_providers.destroy.last_provider_deleted_auto_enabled_local_login"), flash[:alert]
+  ensure
+    Setting.local_login_enabled = original_local_login
+    Setting.sso_auto_redirect = original_sso_auto_redirect
+  end
+
+  test "destroy does not auto-enable local login when other enabled providers remain" do
+    original_local_login = Setting.local_login_enabled
+
+    provider1 = SsoProvider.create!(
+      strategy: "openid_connect",
+      name: "provider_one",
+      label: "Provider One",
+      enabled: true,
+      issuer: "https://one.example.com",
+      client_id: "client1",
+      client_secret: "secret1"
+    )
+    provider2 = SsoProvider.create!(
+      strategy: "openid_connect",
+      name: "provider_two",
+      label: "Provider Two",
+      enabled: true,
+      issuer: "https://two.example.com",
+      client_id: "client2",
+      client_secret: "secret2"
+    )
+
+    Setting.local_login_enabled = false
+
+    delete admin_sso_provider_url(provider1)
+
+    assert_redirected_to admin_sso_providers_path
+    assert_not Setting.local_login_enabled, "local login should remain disabled"
+    assert_equal I18n.t("admin.sso_providers.destroy.success"), flash[:notice]
+  ensure
+    Setting.local_login_enabled = original_local_login
+    provider2.destroy rescue nil
+  end
+
+  test "destroy does not auto-enable local login when last enabled provider deleted but local login already enabled" do
+    provider = SsoProvider.create!(
+      strategy: "openid_connect",
+      name: "only_provider",
+      label: "Only Provider",
+      enabled: true,
+      issuer: "https://example.com",
+      client_id: "client",
+      client_secret: "secret"
+    )
+
+    Setting.local_login_enabled = true
+
+    delete admin_sso_provider_url(provider)
+
+    assert_redirected_to admin_sso_providers_path
+    assert_equal I18n.t("admin.sso_providers.destroy.success"), flash[:notice]
+  end
+
   test "update_settings rejects disabling local login with no sso providers" do
     original_local_login = Setting.local_login_enabled
     AuthConfig.stubs(:sso_providers).returns([])

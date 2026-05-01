@@ -71,6 +71,12 @@ module Admin
       log_provider_change(:destroy, @sso_provider)
       clear_provider_cache
 
+      if SsoProvider.enabled.count == 0 && !Setting.local_login_enabled
+        Setting.local_login_enabled = true
+        Setting.sso_auto_redirect = false
+        return redirect_to admin_sso_providers_path, alert: t(".last_provider_deleted_auto_enabled_local_login")
+      end
+
       redirect_to admin_sso_providers_path, notice: t(".success")
     end
 

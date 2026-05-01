@@ -57,6 +57,7 @@ en:
       destroy:
         success: "SSO provider was successfully deleted."
         confirm: "Are you sure you want to delete this provider? This action cannot be undone."
+        last_provider_deleted_auto_enabled_local_login: "The last enabled SSO provider was deleted. Local login has been automatically re-enabled and SSO auto-redirect has been disabled to prevent lockout."
       update_settings:
         settings_updated: "SSO settings were successfully updated."
         local_login_disabled_no_sso: "You cannot disable local login while no SSO providers are configured. Add and enable an SSO provider first."
