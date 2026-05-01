@@ -98,6 +98,12 @@ module Admin
       }
     end
 
+    def update_settings
+      authorize SsoProvider
+      Setting.sso_auto_redirect = params[:sso_auto_redirect] == "1"
+      redirect_to admin_sso_providers_path, notice: t(".settings_updated")
+    end
+
     private
       def set_sso_provider
         @sso_provider = SsoProvider.find(params[:id])

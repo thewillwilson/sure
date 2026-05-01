@@ -561,6 +561,9 @@ Rails.application.routes.draw do
         patch :toggle
         post :test_connection
       end
+      collection do
+        patch :update_settings
+      end
     end
     resources :users, only: [ :index, :update ]
     resources :invitations, only: [ :destroy ]

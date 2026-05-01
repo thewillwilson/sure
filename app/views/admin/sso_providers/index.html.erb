@@ -1,6 +1,24 @@
 <%= content_for :page_title, "SSO Providers" %>
 
 <div class="space-y-4">
+  <%= settings_section title: "Login Behaviour" do %>
+    <div class="flex items-center justify-between">
+      <div class="space-y-1">
+        <p class="text-sm font-medium text-primary">Auto-redirect to SSO</p>
+        <p class="text-secondary text-sm">When there is exactly one SSO provider and local login is disabled, automatically redirect the login page to the provider.</p>
+      </div>
+
+      <%= styled_form_with model: Setting.new,
+                           url: update_settings_admin_sso_providers_path,
+                           method: :patch,
+                           data: { controller: "auto-submit-form", auto_submit_form_trigger_event_value: "change" } do |form| %>
+        <%= form.toggle :sso_auto_redirect,
+                        checked: Setting.sso_auto_redirect,
+                        data: { auto_submit_form_target: "auto" } %>
+      <% end %>
+    </div>
+  <% end %>
+
   <p class="text-secondary mb-4">
     Manage single sign-on authentication providers for your instance.
     <% unless FeatureFlags.db_sso_providers? %>

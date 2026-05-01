@@ -76,5 +76,9 @@ class AuthConfig
     def sso_providers
       Rails.configuration.x.auth.sso_providers || []
     end
+
+    def sso_auto_redirect?
+      !!Setting.sso_auto_redirect
+    end
   end
 end

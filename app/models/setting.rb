@@ -21,6 +21,10 @@ class Setting < RailsSettings::Base
   field :external_assistant_url, type: :string
   field :external_assistant_token, type: :string
   field :external_assistant_agent_id, type: :string
+
+  # SSO auto-redirect: when true and there's exactly one SSO provider,
+  # automatically redirect the login page to that provider.
+  field :sso_auto_redirect, type: :boolean, default: false
   field :brand_fetch_client_id, type: :string, default: ENV["BRAND_FETCH_CLIENT_ID"]
   field :brand_fetch_high_res_logos, type: :boolean, default: ENV.fetch("BRAND_FETCH_HIGH_RES_LOGOS", "false") == "true"
 
