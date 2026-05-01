@@ -679,3 +679,56 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 end
+
+  # ── SSO auto-redirect ──
+
+  test "auto-redirects to SSO when single provider, local login disabled, and toggle on" do
+    AuthConfig.stubs(:local_login_form_visible?).returns(false)
+    AuthConfig.stubs(:sso_auto_redirect?).returns(true)
+    AuthConfig.stubs(:sso_providers).returns([
+      { id: "authentik", strategy: "openid_connect", name: "authentik", label: "Sign in with Authentik", icon: "key" }
+    ])
+
+    get new_session_path
+    assert_response :success
+    assert_match %r{action="/auth/authentik"}, @response.body
+    assert_match %r{method="post"}, @response.body
+    assert_match /authenticity_token/, @response.body
+  end
+
+  test "does not auto-redirect when local login is enabled" do
+    AuthConfig.stubs(:local_login_form_visible?).returns(true)
+    AuthConfig.stubs(:sso_auto_redirect?).returns(true)
+    AuthConfig.stubs(:sso_providers).returns([
+      { id: "authentik", strategy: "openid_connect", name: "authentik", label: "Sign in with Authentik", icon: "key" }
+    ])
+
+    get new_session_path
+    assert_response :success
+    assert_no_match %r{action="/auth/authentik"}, @response.body
+  end
+
+  test "does not auto-redirect when multiple SSO providers" do
+    AuthConfig.stubs(:local_login_form_visible?).returns(false)
+    AuthConfig.stubs(:sso_auto_redirect?).returns(true)
+    AuthConfig.stubs(:sso_providers).returns([
+      { id: "authentik", strategy: "openid_connect", name: "authentik", label: "Sign in with Authentik", icon: "key" },
+      { id: "google", strategy: "google_oauth2", name: "google_oauth2", label: "Sign in with Google", icon: "google" }
+    ])
+
+    get new_session_path
+    assert_response :success
+    assert_no_match %r{action="/auth/authentik"}, @response.body
+  end
+
+  test "does not auto-redirect when toggle is off" do
+    AuthConfig.stubs(:local_login_form_visible?).returns(false)
+    AuthConfig.stubs(:sso_auto_redirect?).returns(false)
+    AuthConfig.stubs(:sso_providers).returns([
+      { id: "authentik", strategy: "openid_connect", name: "authentik", label: "Sign in with Authentik", icon: "key" }
+    ])
+
+    get new_session_path
+    assert_response :success
+    assert_no_match %r{action="/auth/authentik"}, @response.body
+end

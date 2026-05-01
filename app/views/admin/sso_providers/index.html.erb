@@ -2,40 +2,35 @@
 
 <div class="space-y-4">
   <%= settings_section title: t(".login_behaviour.title") do %>
-    <!-- Local login toggle -->
-    <div class="flex items-center justify-between">
-      <div class="space-y-1">
-        <p class="text-sm font-medium text-primary"><%= t(".login_behaviour.local_login_label") %></p>
-        <p class="text-secondary text-sm"><%= t(".login_behaviour.local_login_help") %></p>
-      </div>
+    <%= styled_form_with model: Setting.new,
+                         url: update_settings_admin_sso_providers_path,
+                         method: :patch,
+                         data: { controller: "auto-submit-form", auto_submit_form_trigger_event_value: "change" } do |form| %>
+      <!-- Local login toggle -->
+      <div class="flex items-center justify-between">
+        <div class="space-y-1">
+          <p class="text-sm font-medium text-primary"><%= t(".login_behaviour.local_login_label") %></p>
+          <p class="text-secondary text-sm"><%= t(".login_behaviour.local_login_help") %></p>
+        </div>
 
-      <%= styled_form_with model: Setting.new,
-                           url: update_settings_admin_sso_providers_path,
-                           method: :patch,
-                           data: { controller: "auto-submit-form", auto_submit_form_trigger_event_value: "change" } do |form| %>
         <%= form.toggle :local_login_enabled,
                         checked: Setting.local_login_enabled,
                         data: { auto_submit_form_target: "auto" } %>
-      <% end %>
-    </div>
-
-    <!-- Auto-redirect toggle (visually dimmed until local login is off) -->
-    <div class="flex items-center justify-between <%= "opacity-50" if Setting.local_login_enabled %>">
-      <div class="space-y-1">
-        <p class="text-sm font-medium text-primary"><%= t(".login_behaviour.auto_redirect_label") %></p>
-        <p class="text-secondary text-sm"><%= t(".login_behaviour.auto_redirect_help") %></p>
       </div>
 
-      <%= styled_form_with model: Setting.new,
-                           url: update_settings_admin_sso_providers_path,
-                           method: :patch,
-                           data: { controller: "auto-submit-form", auto_submit_form_trigger_event_value: "change" } do |form| %>
+      <!-- Auto-redirect toggle (visually dimmed until local login is off) -->
+      <div class="flex items-center justify-between <%= \"opacity-50\" if Setting.local_login_enabled %>">
+        <div class="space-y-1">
+          <p class="text-sm font-medium text-primary"><%= t(".login_behaviour.auto_redirect_label") %></p>
+          <p class="text-secondary text-sm"><%= t(".login_behaviour.auto_redirect_help") %></p>
+        </div>
+
         <%= form.toggle :sso_auto_redirect,
                         checked: Setting.sso_auto_redirect,
                         disabled: Setting.local_login_enabled,
                         data: { auto_submit_form_target: "auto" } %>
-      <% end %>
-    </div>
+      </div>
+    <% end %>
   <% end %>
 
   <p class="text-secondary mb-4">
