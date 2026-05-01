@@ -4,9 +4,9 @@ class RegistrationsController < ApplicationController
   layout "auth"
 
   before_action :ensure_signup_open, if: :self_hosted?
-  before_action :set_user, only: :create
   before_action :set_invitation
   before_action :ensure_local_login_enabled, unless: :invitation_present?
+  before_action :set_user, only: :create
   before_action :validate_password_requirements, only: :create
 
   def new
@@ -51,6 +51,7 @@ class RegistrationsController < ApplicationController
     end
 
     def user_params(specific_param = nil)
+      return ActionController::Parameters.new unless self.params[:user].present?
       params = self.params.require(:user).permit(:name, :email, :password, :password_confirmation, :invite_code, :invitation)
       specific_param ? params[specific_param] : params
     end
