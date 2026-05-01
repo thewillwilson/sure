@@ -72,7 +72,7 @@ class SsoProvider < ApplicationRecord
       end
 
       errors.add(:client_id, "is required for OpenID Connect providers") if client_id.blank?
-      errors.add(:client_secret, "is required for OpenID Connect providers") if client_secret.blank? && (new_record? || client_secret_changed?)
+      errors.add(:client_secret, "is required for OpenID Connect providers") if client_secret.blank?
 
       if redirect_uri.present? && !valid_url?(redirect_uri)
         errors.add(:redirect_uri, "must be a valid URL")
@@ -81,7 +81,7 @@ class SsoProvider < ApplicationRecord
 
     def validate_oauth_fields
       errors.add(:client_id, "is required for OAuth providers") if client_id.blank?
-      errors.add(:client_secret, "is required for OAuth providers") if client_secret.blank? && (new_record? || client_secret_changed?)
+      errors.add(:client_secret, "is required for OAuth providers") if client_secret.blank?
     end
 
     def validate_saml_fields
