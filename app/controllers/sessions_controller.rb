@@ -39,8 +39,8 @@ class SessionsController < ApplicationController
     if !@prefill_demo_credentials && @email.blank? && @password.blank?
       providers = AuthConfig.sso_providers
       if providers.size == 1 && !AuthConfig.local_login_form_visible? && AuthConfig.sso_auto_redirect?
-        provider_name = providers.first[:name].to_s
-        redirect_to "/auth/#{provider_name}", allow_other_host: true
+        @provider = providers.first[:name].to_s
+        render "mobile_sso_start"
         return
       end
     end
