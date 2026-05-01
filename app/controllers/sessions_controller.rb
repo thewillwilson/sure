@@ -45,14 +45,12 @@ class SessionsController < ApplicationController
       @password = params[:password]
     end
 
-    # Auto-redirect to SSO when in pure SSO-only mode with a single provider.
-    # Skip redirect if demo credentials are shown or the user is returning
-    # from a failed local login attempt.
+    # Auto-redirect to SSO in single-provider, SSO-only mode
     if !@prefill_demo_credentials && @email.blank? && @password.blank?
       providers = AuthConfig.sso_providers
       if providers.size == 1 && !AuthConfig.local_login_form_visible? && AuthConfig.sso_auto_redirect? && flash[:alert].blank?
         @provider = providers.first[:name].to_s
-        render "mobile_sso_start"
+        render "mobile_sso_start", layout: false
       end
     end
   end
