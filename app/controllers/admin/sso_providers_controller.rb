@@ -67,6 +67,10 @@ module Admin
     def destroy
       authorize @sso_provider
 
+      if !AuthConfig.local_login_enabled? && SsoProvider.enabled.where.not(id: @sso_provider.id).count == 0
+        return redirect_to admin_sso_providers_path, alert: t("admin.sso_providers.index.lockout_prevented")
+      end
+
       @sso_provider.destroy!
       log_provider_change(:destroy, @sso_provider)
       clear_provider_cache
@@ -82,6 +86,10 @@ module Admin
 
     def toggle
       authorize @sso_provider
+
+      if @sso_provider.enabled? && !AuthConfig.local_login_enabled? && SsoProvider.enabled.where.not(id: @sso_provider.id).count == 0
+        return redirect_to admin_sso_providers_path, alert: t("admin.sso_providers.index.lockout_prevented")
+      end
 
       @sso_provider.update!(enabled: !@sso_provider.enabled)
       log_provider_change(:toggle, @sso_provider)

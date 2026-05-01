@@ -12,6 +12,7 @@ en:
           local_login_help: "Allow users to sign in with email and password. Disabling this forces SSO-only authentication."
           auto_redirect_label: "Auto-redirect to SSO"
           auto_redirect_help: "When there is exactly one SSO provider and local login is disabled, automatically redirect the login page to the provider."
+        lockout_prevented: "This action was prevented because it would disable all SSO providers while local login is disabled, locking everyone out."
         configured_providers_title: "Configured Providers"
         empty_state: "No SSO providers configured yet."
         add_provider: "Add Provider"

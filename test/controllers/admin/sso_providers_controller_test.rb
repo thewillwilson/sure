@@ -88,6 +88,95 @@ class Admin::SsoProvidersControllerTest < ActionDispatch::IntegrationTest
     assert_equal I18n.t("admin.sso_providers.destroy.success"), flash[:notice]
   end
 
+  test "destroy prevents lockout when it would be the last enabled provider and local login is disabled" do
+    original_local_login = Setting.local_login_enabled
+
+    provider = SsoProvider.create!(
+      strategy: "openid_connect",
+      name: "only_provider",
+      label: "Only Provider",
+      enabled: true,
+      issuer: "https://example.com",
+      client_id: "client",
+      client_secret: "secret"
+    )
+
+    Setting.local_login_enabled = false
+    AuthConfig.stubs(:local_login_enabled?).returns(false)
+
+    assert_no_difference "SsoProvider.count" do
+      delete admin_sso_provider_url(provider)
+    end
+
+    assert_redirected_to admin_sso_providers_path
+    assert_equal I18n.t("admin.sso_providers.index.lockout_prevented"), flash[:alert]
+  ensure
+    Setting.local_login_enabled = original_local_login
+    provider.destroy rescue nil
+  end
+
+  test "toggle prevents lockout when disabling the last enabled provider while local login is disabled" do
+    original_local_login = Setting.local_login_enabled
+
+    provider = SsoProvider.create!(
+      strategy: "openid_connect",
+      name: "only_provider_toggle",
+      label: "Only Provider Toggle",
+      enabled: true,
+      issuer: "https://example.com",
+      client_id: "client",
+      client_secret: "secret"
+    )
+
+    Setting.local_login_enabled = false
+    AuthConfig.stubs(:local_login_enabled?).returns(false)
+
+    patch toggle_admin_sso_provider_url(provider)
+
+    assert_redirected_to admin_sso_providers_path
+    assert_equal I18n.t("admin.sso_providers.index.lockout_prevented"), flash[:alert]
+    assert provider.reload.enabled?, "provider should still be enabled"
+  ensure
+    Setting.local_login_enabled = original_local_login
+    provider.destroy rescue nil
+  end
+
+  test "toggle allows disabling a provider when another enabled provider exists and local login is disabled" do
+    original_local_login = Setting.local_login_enabled
+
+    provider1 = SsoProvider.create!(
+      strategy: "openid_connect",
+      name: "provider_toggle_one",
+      label: "Provider Toggle One",
+      enabled: true,
+      issuer: "https://one.example.com",
+      client_id: "client1",
+      client_secret: "secret1"
+    )
+    provider2 = SsoProvider.create!(
+      strategy: "openid_connect",
+      name: "provider_toggle_two",
+      label: "Provider Toggle Two",
+      enabled: true,
+      issuer: "https://two.example.com",
+      client_id: "client2",
+      client_secret: "secret2"
+    )
+
+    Setting.local_login_enabled = false
+    AuthConfig.stubs(:local_login_enabled?).returns(false)
+
+    patch toggle_admin_sso_provider_url(provider1)
+
+    assert_redirected_to admin_sso_providers_path
+    assert_equal I18n.t("admin.sso_providers.toggle.success_disabled"), flash[:notice]
+    assert_not provider1.reload.enabled?
+  ensure
+    Setting.local_login_enabled = original_local_login
+    provider1.destroy rescue nil
+    provider2.destroy rescue nil
+  end
+
   test "update_settings rejects disabling local login with no sso providers" do
     original_local_login = Setting.local_login_enabled
     AuthConfig.stubs(:sso_providers).returns([])

@@ -21,6 +21,7 @@ de:
         legacy_providers_title: "Umgebungskonfigurierte Provider"
         legacy_providers_notice: "Diese Provider werden über Umgebungsvariablen oder YAML konfiguriert und können nicht über diese Oberfläche verwaltet werden. Zur Verwaltung hier migrieren Sie sie zu datenbankgestützten Providern (AUTH_PROVIDERS_SOURCE=db) und legen Sie sie in der Oberfläche neu an."
         env_configured: "Env/YAML"
+        lockout_prevented: "This action was prevented because it would disable all SSO providers while local login is disabled, locking everyone out."
       new:
         title: "SSO-Provider hinzufügen"
         description: "Neuen Single-Sign-On-Authentifizierungsprovider konfigurieren"
