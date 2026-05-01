@@ -3,7 +3,11 @@
 class AuthConfig
   class << self
     def local_login_enabled?
-      # Default to true if not configured to preserve existing behavior.
+      # Read from runtime Setting (admin toggle) first, then fall back to
+      # boot-time configuration so env-based defaults are respected.
+      !!Setting.local_login_enabled
+    rescue ActiveRecord::StatementInvalid, ActiveRecord::NoDatabaseError
+      # Database unavailable during boot or tests — fall back to env config.
       value = Rails.configuration.x.auth.local_login_enabled
       value.nil? ? true : !!value
     end
