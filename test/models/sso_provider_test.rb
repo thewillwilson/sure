@@ -146,6 +146,23 @@ class SsoProviderTest < ActiveSupport::TestCase
     assert_includes provider.errors[:client_secret], "is required for OpenID Connect providers"
   end
 
+  test "OIDC provider preserves existing client_secret when blank submitted on update" do
+    provider = SsoProvider.create!(
+      strategy: "openid_connect",
+      name: "test_oidc",
+      label: "Test",
+      issuer: "https://test.example.com",
+      client_id: "test",
+      client_secret: "existing_secret"
+    )
+
+    provider.client_secret = ""
+    provider.label = "Updated Label"
+
+    assert provider.valid?, provider.errors.full_messages.inspect
+    assert_equal "existing_secret", provider.client_secret
+  end
+
   test "OIDC provider validates issuer URL format" do
     provider = SsoProvider.new(
       strategy: "openid_connect",
@@ -182,6 +199,22 @@ class SsoProviderTest < ActiveSupport::TestCase
 
     assert_not provider.valid?
     assert_includes provider.errors[:client_secret], "is required for OAuth providers"
+  end
+
+  test "OAuth provider preserves existing client_secret when blank submitted on update" do
+    provider = SsoProvider.create!(
+      strategy: "google_oauth2",
+      name: "test_google",
+      label: "Test Google",
+      client_id: "test",
+      client_secret: "existing_secret"
+    )
+
+    provider.client_secret = ""
+    provider.label = "Updated Label"
+
+    assert provider.valid?, provider.errors.full_messages.inspect
+    assert_equal "existing_secret", provider.client_secret
   end
 
   test "enabled scope returns only enabled providers" do
