@@ -180,6 +180,7 @@ class Admin::SsoProvidersControllerTest < ActionDispatch::IntegrationTest
   test "update_settings rejects disabling local login with no sso providers" do
     original_local_login = Setting.local_login_enabled
     AuthConfig.stubs(:sso_providers).returns([])
+    Setting.local_login_enabled = true
 
     patch update_settings_admin_sso_providers_url, params: {
       setting: { local_login_enabled: "0" }

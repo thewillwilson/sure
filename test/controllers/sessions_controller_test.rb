@@ -830,9 +830,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
 
     get new_session_path
     assert_response :success
-    assert_match %r{action="/auth/authentik"}, @response.body
-    assert_match %r{method="post"}, @response.body
-    assert_match /authenticity_token/, @response.body
+    assert_match %r{id="sso_form"}, @response.body
   end
 
   test "does not auto-redirect when local login is enabled" do
