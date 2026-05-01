@@ -17,6 +17,7 @@ class TruelayerEntry::Processor
       currency:    currency,
       date:        date,
       name:        name,
+      merchant:    merchant,
       source:      "truelayer",
       notes:       notes,
       extra:       extra
@@ -76,19 +77,89 @@ class TruelayerEntry::Processor
     end
 
     def name
-      data[:merchant_name].presence || data[:description].presence || "TrueLayer Transaction"
+      data[:merchant_name].presence || meta_counterparty_name || category_fallback_name || humanized_description || "TrueLayer Transaction"
     end
 
+    # Creates a Merchant when TrueLayer provides a merchant_name (card purchases / identified payees)
+    # or when the meta object contains a counterparty name.
+    def merchant
+      merchant_name = data[:merchant_name].to_s.strip.presence || meta_counterparty_name
+      return nil if merchant_name.blank?
+
+      merchant_id = Digest::MD5.hexdigest(merchant_name.downcase)
+
+      import_adapter.find_or_create_merchant(
+        provider_merchant_id: "truelayer_merchant_#{merchant_id}",
+        name:                 merchant_name,
+        source:               "truelayer"
+      )
+    end
+
+    # Always preserve the raw bank description in notes so reference codes,
+    # location info, and provider-specific text are never lost.
     def notes
-      return nil if data[:merchant_name].present?
       data[:description].presence
+    end
+
+    # Provides a humanized fallback name based on TrueLayer's transaction_category
+    def category_fallback_name
+      case data[:transaction_category].to_s.upcase
+      when "TRANSFER"       then "Bank Transfer"
+      when "ATM"            then "ATM Withdrawal"
+      when "DIRECT_DEBIT"   then "Direct Debit"
+      when "DIRECT_CREDIT"  then "Direct Credit"
+      when "STANDING_ORDER" then "Standing Order"
+      when "REPEAT_PAYMENT" then "Repeat Payment"
+      when "INTEREST"       then "Interest"
+      when "DIVIDEND"       then "Dividend"
+      when "FEE"            then "Fee"
+      when "CASH"           then "Cash"
+      when "CHECK"          then "Cheque"
+      else nil
+      end
+    end
+
+    # Returns the description for use as a name, but rejects bare reference codes
+    # (e.g. "R2391", "FP123456", "ACH-001") so they don't pollute the name field.
+    def humanized_description
+      desc = data[:description].to_s.strip
+      return nil if desc.blank?
+      return nil if desc.match?(/\A[A-Z]{1,4}[\-_]?\d{2,}\z/i)
+
+      desc
+    end
+
+    # TrueLayer sometimes returns counterparty names inside the meta object
+    # (e.g. meta['counter_party_preferred_name']). This is bank-dependent.
+    def meta_counterparty_name
+      meta = data[:meta].presence
+      return nil unless meta.is_a?(Hash) || meta.is_a?(ActionController::Parameters)
+
+      name = meta[:counter_party_preferred_name].presence ||
+             meta[:counterparty_name].presence ||
+             meta[:party_name].presence ||
+             meta[:creditor_name].presence ||
+             meta[:debtor_name].presence
+
+      name&.to_s&.strip
     end
 
     def extra
       pending = data[:_pending] || data[:transaction_status] == "PENDING"
       result = { "truelayer" => { "pending" => pending } }
+
       norm_id = data[:normalised_provider_transaction_id].presence
       result["truelayer"]["normalised_provider_transaction_id"] = norm_id if norm_id
+
+      category = data[:transaction_category].presence
+      result["truelayer"]["transaction_category"] = category if category
+
+      classification = data[:transaction_classification].presence
+      result["truelayer"]["transaction_classification"] = classification if classification
+
+      meta = data[:meta].presence
+      result["truelayer"]["meta"] = meta if meta
+
       result
     end
 end

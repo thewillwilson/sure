@@ -297,4 +297,159 @@ class TruelayerEntry::ProcessorTest < ActiveSupport::TestCase
     entry = @account.entries.find_by!(external_id: "truelayer_txn_float_precision")
     assert_equal 10.99, entry.amount.to_f.abs
   end
+
+  test "always stores description in notes even when merchant_name is present" do
+    tx = {
+      transaction_id:   "txn_notes_merch",
+      timestamp:        Date.current.iso8601,
+      amount:           -10.00,
+      currency:         "GBP",
+      transaction_type: "DEBIT",
+      merchant_name:    "Starbucks",
+      description:      "SBX*LONDON BRIDGE"
+    }
+
+    TruelayerEntry::Processor.new(tx, truelayer_account: @truelayer_account).process
+    entry = @account.entries.find_by!(external_id: "truelayer_txn_notes_merch")
+    assert_equal "SBX*LONDON BRIDGE", entry.notes
+  end
+
+  test "creates merchant when merchant_name is present" do
+    tx = {
+      transaction_id:   "txn_merchant_obj",
+      timestamp:        Date.current.iso8601,
+      amount:           -10.00,
+      currency:         "GBP",
+      transaction_type: "DEBIT",
+      merchant_name:    "Starbucks",
+      description:      "SBX*LONDON BRIDGE"
+    }
+
+    assert_difference "ProviderMerchant.count", 1 do
+      TruelayerEntry::Processor.new(tx, truelayer_account: @truelayer_account).process
+    end
+
+    entry = @account.entries.find_by!(external_id: "truelayer_txn_merchant_obj")
+    assert_equal "Starbucks", entry.transaction&.merchant&.name
+  end
+
+  test "uses transaction_category as name for transfers without merchant_name" do
+    tx = {
+      transaction_id:      "txn_transfer",
+      timestamp:           Date.current.iso8601,
+      amount:              -100.00,
+      currency:            "GBP",
+      transaction_type:    "DEBIT",
+      merchant_name:       nil,
+      description:         "R2391",
+      transaction_category: "TRANSFER"
+    }
+
+    TruelayerEntry::Processor.new(tx, truelayer_account: @truelayer_account).process
+    entry = @account.entries.find_by!(external_id: "truelayer_txn_transfer")
+    assert_equal "Bank Transfer", entry.name
+    assert_equal "R2391", entry.notes
+  end
+
+  test "rejects bare reference codes as names and falls back to category" do
+    tx = {
+      transaction_id:      "txn_ref_code",
+      timestamp:           Date.current.iso8601,
+      amount:              -50.00,
+      currency:            "GBP",
+      transaction_type:    "DEBIT",
+      merchant_name:       nil,
+      description:         "FP12345678",
+      transaction_category: "TRANSFER"
+    }
+
+    TruelayerEntry::Processor.new(tx, truelayer_account: @truelayer_account).process
+    entry = @account.entries.find_by!(external_id: "truelayer_txn_ref_code")
+    assert_equal "Bank Transfer", entry.name
+  end
+
+  test "uses meta counter_party_preferred_name as name when merchant_name is absent" do
+    tx = {
+      transaction_id:       "txn_meta_counterparty",
+      timestamp:            Date.current.iso8601,
+      amount:               -100.00,
+      currency:             "GBP",
+      transaction_type:     "DEBIT",
+      merchant_name:        nil,
+      description:          "R2391",
+      transaction_category: "TRANSFER",
+      meta: {
+        counter_party_preferred_name: "James Kapherr"
+      }
+    }
+
+    TruelayerEntry::Processor.new(tx, truelayer_account: @truelayer_account).process
+    entry = @account.entries.find_by!(external_id: "truelayer_txn_meta_counterparty")
+    assert_equal "James Kapherr", entry.name
+    assert_equal "R2391", entry.notes
+  end
+
+  test "uses meta counterparty_name as fallback when counter_party_preferred_name is absent" do
+    tx = {
+      transaction_id:   "txn_meta_counterparty2",
+      timestamp:        Date.current.iso8601,
+      amount:           -50.00,
+      currency:         "GBP",
+      transaction_type: "DEBIT",
+      merchant_name:    nil,
+      description:      "Payment",
+      meta: {
+        counterparty_name: "Alice Smith"
+      }
+    }
+
+    TruelayerEntry::Processor.new(tx, truelayer_account: @truelayer_account).process
+    entry = @account.entries.find_by!(external_id: "truelayer_txn_meta_counterparty2")
+    assert_equal "Alice Smith", entry.name
+  end
+
+  test "creates merchant from meta counter_party_preferred_name" do
+    tx = {
+      transaction_id:       "txn_meta_merchant",
+      timestamp:            Date.current.iso8601,
+      amount:               -75.00,
+      currency:             "GBP",
+      transaction_type:     "DEBIT",
+      merchant_name:        nil,
+      description:          "Transfer to James",
+      transaction_category: "TRANSFER",
+      meta: {
+        counter_party_preferred_name: "James Kapherr"
+      }
+    }
+
+    assert_difference "ProviderMerchant.count", 1 do
+      TruelayerEntry::Processor.new(tx, truelayer_account: @truelayer_account).process
+    end
+
+    entry = @account.entries.find_by!(external_id: "truelayer_txn_meta_merchant")
+    assert_equal "James Kapherr", entry.transaction&.merchant&.name
+  end
+
+  test "stores meta in extra" do
+    tx = {
+      transaction_id:   "txn_meta_extra",
+      timestamp:        Date.current.iso8601,
+      amount:           -20.00,
+      currency:         "GBP",
+      transaction_type: "DEBIT",
+      merchant_name:    "Tesco",
+      description:      "TESCO STORES",
+      meta: {
+        counter_party_preferred_name: "Jane Doe",
+        bank_transaction_id: "bti_123"
+      }
+    }
+
+    TruelayerEntry::Processor.new(tx, truelayer_account: @truelayer_account).process
+    entry = @account.entries.find_by!(external_id: "truelayer_txn_meta_extra")
+    meta_extra = entry.transaction&.extra&.dig("truelayer", "meta")
+    assert_equal "Jane Doe", meta_extra["counter_party_preferred_name"]
+    assert_equal "bti_123", meta_extra["bank_transaction_id"]
+  end
 end
