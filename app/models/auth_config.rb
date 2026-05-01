@@ -5,7 +5,13 @@ class AuthConfig
     def local_login_enabled?
       # Read from runtime Setting (admin toggle) first, then fall back to
       # boot-time configuration so env-based defaults are respected.
-      !!Setting.local_login_enabled
+      raw = Setting.local_login_enabled
+      if raw.nil?
+        value = Rails.configuration.x.auth.local_login_enabled
+        value.nil? ? true : !!value
+      else
+        !!raw
+      end
     rescue ActiveRecord::StatementInvalid, ActiveRecord::NoDatabaseError
       # Database unavailable during boot or tests — fall back to env config.
       value = Rails.configuration.x.auth.local_login_enabled
@@ -82,7 +88,9 @@ class AuthConfig
     end
 
     def sso_auto_redirect?
-      !!Setting.sso_auto_redirect
+      raw = Setting.sso_auto_redirect
+      return false if raw.nil?
+      !!raw
     rescue ActiveRecord::StatementInvalid, ActiveRecord::NoDatabaseError
       false
     end
