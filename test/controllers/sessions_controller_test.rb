@@ -730,5 +730,5 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     get new_session_path
     assert_response :success
     assert_no_match %r{id="sso_form"}, @response.body
-end
+  end
 end
