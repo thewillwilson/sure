@@ -116,7 +116,7 @@ class SessionsController < ApplicationController
     session.delete(:sso_login_provider)
 
     # Check if we should redirect to the provider for federated logout
-    if oidc_identity && id_token.present?
+    if oidc_identity && (id_token.present? || saml_provider?(oidc_identity.provider))
       federated_logout_url = build_federated_logout_url(oidc_identity, id_token)
 
       if federated_logout_url
@@ -413,6 +413,11 @@ class SessionsController < ApplicationController
       else
         nil
       end
+    end
+
+    def saml_provider?(provider_name)
+      config = ProviderLoader.load_providers.find { |p| p[:name] == provider_name }
+      config&.dig(:strategy) == "saml"
     end
 
     def discovery_url_for(issuer)
