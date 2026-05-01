@@ -358,8 +358,16 @@ class SessionsController < ApplicationController
 
       return nil unless provider_config
 
+      strategy = provider_config[:strategy]
+
+      # SAML Single Logout (SLO): return the IdP SLO URL directly
+      if strategy == "saml"
+        idp_slo_url = provider_config.dig(:settings, "idp_slo_url") || provider_config.dig(:settings, :idp_slo_url)
+        return idp_slo_url.presence
+      end
+
       # For OIDC providers, fetch end_session_endpoint from discovery
-      if provider_config[:strategy] == "openid_connect" && provider_config[:issuer].present?
+      if strategy == "openid_connect" && provider_config[:issuer].present?
         begin
           discovery_url = discovery_url_for(provider_config[:issuer])
           response = Faraday.new(ssl: self.class.faraday_ssl_options).get(discovery_url) do |req|
@@ -380,6 +388,7 @@ class SessionsController < ApplicationController
             id_token_hint: id_token,
             post_logout_redirect_uri: post_logout_redirect
           }
+          params[:client_id] = provider_config[:client_id] if provider_config[:client_id].present?
 
           "#{end_session_endpoint}?#{params.to_query}"
         rescue Faraday::Error, JSON::ParserError, StandardError => e

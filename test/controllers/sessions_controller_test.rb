@@ -130,6 +130,124 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_nil Session.find_by(id: session_record.id)
   end
 
+  # Federated Logout Tests
+  test "redirects to OIDC end_session_endpoint with client_id when provider has client_id" do
+    oidc_identity = oidc_identities(:bob_google)
+    sign_in @user
+    session_record = @user.sessions.last
+
+    provider_config = {
+      name: oidc_identity.provider,
+      strategy: "openid_connect",
+      issuer: "https://keycloak.example.com/realms/test",
+      client_id: "my-client"
+    }
+    ProviderLoader.stubs(:load_providers).returns([ provider_config ])
+
+    discovery_body = { "end_session_endpoint" => "https://keycloak.example.com/realms/test/protocol/openid-connect/logout" }.to_json
+    stub_response = stub(success?: true, body: discovery_body)
+    Faraday::Connection.any_instance.stubs(:get).returns(stub_response)
+
+    session[:id_token_hint] = "fake-id-token"
+    session[:sso_login_provider] = oidc_identity.provider
+
+    delete session_url(session_record)
+
+    assert_response :redirect
+    redirect_uri = URI.parse(response.location)
+    params = Rack::Utils.parse_query(redirect_uri.query)
+    assert_equal "my-client", params["client_id"]
+    assert_equal "fake-id-token", params["id_token_hint"]
+  end
+
+  test "omits client_id from OIDC logout URL when provider has no client_id" do
+    oidc_identity = oidc_identities(:bob_google)
+    sign_in @user
+    session_record = @user.sessions.last
+
+    provider_config = {
+      name: oidc_identity.provider,
+      strategy: "openid_connect",
+      issuer: "https://idp.example.com"
+    }
+    ProviderLoader.stubs(:load_providers).returns([ provider_config ])
+
+    discovery_body = { "end_session_endpoint" => "https://idp.example.com/logout" }.to_json
+    stub_response = stub(success?: true, body: discovery_body)
+    Faraday::Connection.any_instance.stubs(:get).returns(stub_response)
+
+    session[:id_token_hint] = "fake-id-token"
+    session[:sso_login_provider] = oidc_identity.provider
+
+    delete session_url(session_record)
+
+    assert_response :redirect
+    params = Rack::Utils.parse_query(URI.parse(response.location).query)
+    assert_nil params["client_id"]
+    assert_equal "fake-id-token", params["id_token_hint"]
+  end
+
+  test "redirects to SAML SLO URL using string key" do
+    oidc_identity = oidc_identities(:bob_google)
+    sign_in @user
+    session_record = @user.sessions.last
+
+    provider_config = {
+      name: oidc_identity.provider,
+      strategy: "saml",
+      settings: { "idp_slo_url" => "https://saml.example.com/slo" }
+    }
+    ProviderLoader.stubs(:load_providers).returns([ provider_config ])
+
+    session[:id_token_hint] = "fake-id-token"
+    session[:sso_login_provider] = oidc_identity.provider
+
+    delete session_url(session_record)
+
+    assert_redirected_to "https://saml.example.com/slo"
+  end
+
+  test "redirects to SAML SLO URL using symbol key" do
+    oidc_identity = oidc_identities(:bob_google)
+    sign_in @user
+    session_record = @user.sessions.last
+
+    provider_config = {
+      name: oidc_identity.provider,
+      strategy: "saml",
+      settings: { idp_slo_url: "https://saml.example.com/slo" }
+    }
+    ProviderLoader.stubs(:load_providers).returns([ provider_config ])
+
+    session[:id_token_hint] = "fake-id-token"
+    session[:sso_login_provider] = oidc_identity.provider
+
+    delete session_url(session_record)
+
+    assert_redirected_to "https://saml.example.com/slo"
+  end
+
+  test "falls back to local logout when SAML provider has no idp_slo_url" do
+    oidc_identity = oidc_identities(:bob_google)
+    sign_in @user
+    session_record = @user.sessions.last
+
+    provider_config = {
+      name: oidc_identity.provider,
+      strategy: "saml",
+      settings: {}
+    }
+    ProviderLoader.stubs(:load_providers).returns([ provider_config ])
+
+    session[:id_token_hint] = "fake-id-token"
+    session[:sso_login_provider] = oidc_identity.provider
+
+    delete session_url(session_record)
+
+    assert_redirected_to new_session_path
+    assert_equal "You have signed out successfully.", flash[:notice]
+  end
+
   test "redirects to MFA verification when MFA enabled" do
     @user.setup_mfa!
     @user.enable_mfa!
