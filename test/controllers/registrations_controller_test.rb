@@ -99,6 +99,24 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "new redirects to login with alert when local login is disabled" do
+    AuthConfig.stubs(:local_login_enabled?).returns(false)
+
+    get new_registration_url
+
+    assert_redirected_to new_session_path
+    assert_equal t("registrations.local_login_disabled"), flash[:alert]
+  end
+
+  test "new allows access when local login is disabled but invitation token is present" do
+    AuthConfig.stubs(:local_login_enabled?).returns(false)
+    invitation = invitations(:one)
+
+    get new_registration_url, params: { invitation: invitation.token }
+
+    assert_response :success
+  end
+
   test "creating account from guest invitation assigns guest role and intro layout" do
     invitation = invitations(:one)
     invitation.update!(role: "guest", email: "guest-signup@example.com")

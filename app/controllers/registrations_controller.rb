@@ -6,6 +6,7 @@ class RegistrationsController < ApplicationController
   before_action :ensure_signup_open, if: :self_hosted?
   before_action :set_user, only: :create
   before_action :set_invitation
+  before_action :ensure_local_login_enabled, unless: :invitation_present?
   before_action :validate_password_requirements, only: :create
 
   def new
@@ -109,5 +110,15 @@ class RegistrationsController < ApplicationController
       return unless Setting.onboarding_state == "closed"
 
       redirect_to new_session_path, alert: t("registrations.closed")
+    end
+
+    def ensure_local_login_enabled
+      return if AuthConfig.local_login_enabled?
+
+      redirect_to new_session_path, alert: t("registrations.local_login_disabled")
+    end
+
+    def invitation_present?
+      @invitation.present?
     end
 end
