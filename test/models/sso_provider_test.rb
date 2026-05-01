@@ -156,11 +156,11 @@ class SsoProviderTest < ActiveSupport::TestCase
       client_secret: "existing_secret"
     )
 
-    provider.client_secret = ""
-    provider.label = "Updated Label"
+    provider.update!(client_secret: "", label: "Updated Label")
+    provider.reload
 
-    assert provider.valid?, provider.errors.full_messages.inspect
     assert_equal "existing_secret", provider.client_secret
+    assert_equal "Updated Label", provider.label
   end
 
   test "OIDC provider validates issuer URL format" do
@@ -210,11 +210,11 @@ class SsoProviderTest < ActiveSupport::TestCase
       client_secret: "existing_secret"
     )
 
-    provider.client_secret = ""
-    provider.label = "Updated Label"
+    provider.update!(client_secret: "", label: "Updated Label")
+    provider.reload
 
-    assert provider.valid?, provider.errors.full_messages.inspect
     assert_equal "existing_secret", provider.client_secret
+    assert_equal "Updated Label", provider.label
   end
 
   test "enabled scope returns only enabled providers" do
