@@ -904,11 +904,21 @@ class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
     assert_equal "invalid_or_expired_code", data["error"]
   end
 
-  test "sso_exchange rejects an expired or missing authorization code" do
+  test "sso_exchange rejects an invalid authorization code" do
     post "/api/v1/auth/sso_exchange", params: { code: "no-such-code" }, as: :json
 
     assert_response :unauthorized
     data = JSON.parse(response.body)
     assert_equal "invalid_or_expired_code", data["error"]
+  end
+
+  test "sso_exchange rejects a missing or blank authorization code" do
+    post "/api/v1/auth/sso_exchange", params: {}, as: :json
+    assert_response :unauthorized
+    assert_equal "invalid_or_expired_code", JSON.parse(response.body)["error"]
+
+    post "/api/v1/auth/sso_exchange", params: { code: "" }, as: :json
+    assert_response :unauthorized
+    assert_equal "invalid_or_expired_code", JSON.parse(response.body)["error"]
   end
 end
