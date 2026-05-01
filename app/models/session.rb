@@ -24,6 +24,22 @@ class Session < ApplicationRecord
     save!
   end
 
+  def id_token_hint
+    data["id_token_hint"]
+  end
+
+  def id_token_hint=(value)
+    self.data = data.merge("id_token_hint" => value)
+  end
+
+  def oidc_provider
+    data["oidc_provider"]
+  end
+
+  def oidc_provider=(value)
+    self.data = data.merge("oidc_provider" => value)
+  end
+
   private
 
     def capture_session_info

@@ -32,6 +32,15 @@ class MfaController < ApplicationController
     if @user&.verify_otp?(params[:code])
       session.delete(:mfa_user_id)
       @session = create_session_for(@user)
+
+      # Bridge SSO metadata cached during OIDC callback for MFA users
+      if (sso_data = Rails.cache.read("mfa_sso:#{@user.id}"))
+        @session.id_token_hint = sso_data["id_token"] || sso_data[:id_token]
+        @session.oidc_provider = sso_data["provider"] || sso_data[:provider]
+        @session.save!
+        Rails.cache.delete("mfa_sso:#{@user.id}")
+      end
+
       flash[:notice] = t("invitations.accept_choice.joined_household") if accept_pending_invitation_for(@user)
       redirect_to root_path
     else

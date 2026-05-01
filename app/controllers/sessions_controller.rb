@@ -16,6 +16,18 @@ class SessionsController < ApplicationController
     # Clear any stale mobile SSO session flag from an abandoned mobile flow
     session.delete(:mobile_sso)
 
+    # Purge stale SSO state from previous login attempts to prevent
+    # ActionDispatch::Cookies::CookieOverflow (id_token JWTs are ~3KB).
+    session.delete(:id_token_hint)
+    session.delete(:sso_login_provider)
+    session.delete(:pending_oidc_auth)
+
+    # Clean up a stale session_token cookie left behind after logout
+    # or session revocation so the user starts with a clean slate.
+    if cookies.signed[:session_token].present? && Session.find_by(id: cookies.signed[:session_token]).nil?
+      cookies.delete(:session_token, httponly: true)
+    end
+
     begin
       demo = Rails.application.config_for(:demo)
       @prefill_demo_credentials = demo_host_match?(demo)
@@ -38,7 +50,7 @@ class SessionsController < ApplicationController
     # from a failed local login attempt.
     if !@prefill_demo_credentials && @email.blank? && @password.blank?
       providers = AuthConfig.sso_providers
-      if providers.size == 1 && !AuthConfig.local_login_form_visible? && AuthConfig.sso_auto_redirect?
+      if providers.size == 1 && !AuthConfig.local_login_form_visible? && AuthConfig.sso_auto_redirect? && flash[:alert].blank?
         @provider = providers.first[:name].to_s
         render "mobile_sso_start"
       end
@@ -89,8 +101,8 @@ class SessionsController < ApplicationController
 
   def destroy
     user = Current.user
-    id_token = session[:id_token_hint]
-    login_provider = session[:sso_login_provider]
+    id_token = @session.id_token_hint
+    login_provider = @session.oidc_provider
 
     # Find the identity for the provider used during login, with fallback to first if session data lost
     oidc_identity = if login_provider.present?
@@ -101,16 +113,17 @@ class SessionsController < ApplicationController
 
     # Destroy local session
     @session.destroy
+    cookies.delete(:session_token, httponly: true)
     session.delete(:id_token_hint)
     session.delete(:sso_login_provider)
 
-    # Check if we should redirect to IdP for federated logout
+    # Check if we should redirect to the provider for federated logout
     if oidc_identity && id_token.present?
-      idp_logout_url = build_idp_logout_url(oidc_identity, id_token)
+      federated_logout_url = build_federated_logout_url(oidc_identity, id_token)
 
-      if idp_logout_url
+      if federated_logout_url
         SsoAuditLog.log_logout_idp!(user: user, provider: oidc_identity.provider, request: request)
-        redirect_to idp_logout_url, allow_other_host: true
+        redirect_to federated_logout_url, allow_other_host: true
         return
       end
     end
@@ -193,15 +206,19 @@ class SessionsController < ApplicationController
       end
 
       # Store id_token and provider for RP-initiated logout
-      session[:id_token_hint] = auth.credentials&.id_token if auth.credentials&.id_token
-      session[:sso_login_provider] = auth.provider
+      id_token = auth.credentials&.id_token
+      provider = auth.provider
 
       # MFA check: If user has MFA enabled, require verification
       if user.otp_required?
+        Rails.cache.write("mfa_sso:#{user.id}", { id_token: id_token, provider: provider }.compact, expires_in: 10.minutes)
         session[:mfa_user_id] = user.id
         redirect_to verify_mfa_path
       else
         @session = create_session_for(user)
+        @session.id_token_hint = id_token
+        @session.oidc_provider = provider
+        @session.save!
         flash[:notice] = t("invitations.accept_choice.joined_household") if accept_pending_invitation_for(user)
         redirect_to root_path
       end
@@ -350,7 +367,7 @@ class SessionsController < ApplicationController
       demo["hosts"].include?(request.host)
     end
 
-    def build_idp_logout_url(oidc_identity, id_token)
+    def build_federated_logout_url(oidc_identity, id_token)
       # Find the provider configuration using unified loader (supports both YAML and DB providers)
       provider_config = ProviderLoader.load_providers.find do |p|
         p[:name] == oidc_identity.provider
