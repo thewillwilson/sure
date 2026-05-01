@@ -32,6 +32,18 @@ class SessionsController < ApplicationController
       @email = params[:email]
       @password = params[:password]
     end
+
+    # Auto-redirect to SSO when in pure SSO-only mode with a single provider.
+    # Skip redirect if demo credentials are shown or the user is returning
+    # from a failed local login attempt.
+    if !@prefill_demo_credentials && @email.blank? && @password.blank?
+      providers = AuthConfig.sso_providers
+      if providers.size == 1 && !AuthConfig.local_login_form_visible?
+        provider_name = providers.first[:name].to_s
+        redirect_to "/auth/#{provider_name}", allow_other_host: true
+        return
+      end
+    end
   end
 
   def create
