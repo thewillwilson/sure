@@ -42,18 +42,18 @@ class TruelayerAccount < ApplicationRecord
   end
 
   def masked_account_number
-    number = raw_payload&.dig("account_number", "number")
+    number = parsed_raw_payload&.dig("account_number", "number")
     return "••••#{number.last(4)}" if number.present?
-    sort_code = raw_payload&.dig("account_number", "sort_code")
+    sort_code = parsed_raw_payload&.dig("account_number", "sort_code")
     "Sort code: #{sort_code}" if sort_code.present?
   end
 
   def provider_display_name
-    raw_payload&.dig("provider", "display_name")
+    parsed_raw_payload&.dig("provider", "display_name")
   end
 
   def provider_logo_uri
-    raw_payload&.dig("provider", "logo_uri")
+    parsed_raw_payload&.dig("provider", "logo_uri")
   end
 
   def current_account
@@ -84,9 +84,19 @@ class TruelayerAccount < ApplicationRecord
       name:         data[:display_name].presence || "TrueLayer Account",
       currency:     parse_currency(data[:currency]),
       account_type: data[:account_type],
-      raw_payload:  account_data
+      raw_payload:  account_data.is_a?(String) ? account_data : account_data.to_json
     }
     attrs[:account_kind] = account_kind if account_kind.present?
     update!(attrs)
   end
+
+  private
+
+    def parsed_raw_payload
+      return nil unless raw_payload
+      return raw_payload if raw_payload.is_a?(Hash)
+      JSON.parse(raw_payload)
+    rescue JSON::ParserError
+      nil
+    end
 end
