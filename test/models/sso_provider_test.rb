@@ -133,7 +133,7 @@ class SsoProviderTest < ActiveSupport::TestCase
     assert_includes provider.errors[:client_id], "is required for OpenID Connect providers"
   end
 
-  test "OIDC provider requires client_secret" do
+  test "OIDC provider requires client_secret on create" do
     provider = SsoProvider.new(
       strategy: "openid_connect",
       name: "test_oidc",
@@ -142,6 +142,35 @@ class SsoProviderTest < ActiveSupport::TestCase
       client_id: "test"
     )
 
+    assert_not provider.valid?
+    assert_includes provider.errors[:client_secret], "is required for OpenID Connect providers"
+  end
+
+  test "OIDC provider allows blank client_secret on update when not changed" do
+    provider = SsoProvider.create!(
+      strategy: "openid_connect",
+      name: "test_oidc",
+      label: "Test",
+      issuer: "https://test.example.com",
+      client_id: "test",
+      client_secret: "existing_secret"
+    )
+
+    provider.label = "Updated Label"
+    assert provider.valid?, provider.errors.full_messages.inspect
+  end
+
+  test "OIDC provider rejects blank client_secret on update when explicitly cleared" do
+    provider = SsoProvider.create!(
+      strategy: "openid_connect",
+      name: "test_oidc",
+      label: "Test",
+      issuer: "https://test.example.com",
+      client_id: "test",
+      client_secret: "existing_secret"
+    )
+
+    provider.client_secret = ""
     assert_not provider.valid?
     assert_includes provider.errors[:client_secret], "is required for OpenID Connect providers"
   end
@@ -172,7 +201,7 @@ class SsoProviderTest < ActiveSupport::TestCase
     assert_includes provider.errors[:client_id], "is required for OAuth providers"
   end
 
-  test "OAuth provider requires client_secret" do
+  test "OAuth provider requires client_secret on create" do
     provider = SsoProvider.new(
       strategy: "google_oauth2",
       name: "test_google",
@@ -180,6 +209,33 @@ class SsoProviderTest < ActiveSupport::TestCase
       client_id: "test"
     )
 
+    assert_not provider.valid?
+    assert_includes provider.errors[:client_secret], "is required for OAuth providers"
+  end
+
+  test "OAuth provider allows blank client_secret on update when not changed" do
+    provider = SsoProvider.create!(
+      strategy: "google_oauth2",
+      name: "test_google",
+      label: "Test Google",
+      client_id: "test",
+      client_secret: "existing_secret"
+    )
+
+    provider.label = "Updated Label"
+    assert provider.valid?, provider.errors.full_messages.inspect
+  end
+
+  test "OAuth provider rejects blank client_secret on update when explicitly cleared" do
+    provider = SsoProvider.create!(
+      strategy: "google_oauth2",
+      name: "test_google",
+      label: "Test Google",
+      client_id: "test",
+      client_secret: "existing_secret"
+    )
+
+    provider.client_secret = ""
     assert_not provider.valid?
     assert_includes provider.errors[:client_secret], "is required for OAuth providers"
   end
