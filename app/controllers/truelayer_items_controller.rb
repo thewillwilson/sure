@@ -180,7 +180,7 @@ class TruelayerItemsController < ApplicationController
       @truelayer_item.sync_later(window_start_date: 90.days.ago.to_date)
       redirect_to accounts_path, notice: t(".success"), status: :see_other
     end
-  rescue ActiveRecord::RecordInvalid => e
+  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
     redirect_to setup_accounts_truelayer_item_path(@truelayer_item), alert: e.message, status: :see_other
   end
 
@@ -244,7 +244,7 @@ class TruelayerItemsController < ApplicationController
     end
 
     redirect_to accounts_path, notice: t(".success"), status: :see_other
-  rescue ActiveRecord::RecordInvalid => e
+  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
     redirect_to accounts_path, alert: e.message, status: :see_other
   end
 
