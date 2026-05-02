@@ -230,7 +230,13 @@ class Provider::Truelayer
         raise unless e.error_type == :rate_limited
         attempts += 1
         raise if attempts >= max_retries
-        Rails.logger.warn "TrueLayer: rate limited, retrying immediately (attempt #{attempts}/#{max_retries})"
+        wait = e.retry_after.to_i
+        if wait > 0
+          Rails.logger.warn "TrueLayer: rate limited, sleeping #{wait}s before retry (attempt #{attempts}/#{max_retries})"
+          sleep(wait)
+        else
+          Rails.logger.warn "TrueLayer: rate limited, retrying (attempt #{attempts}/#{max_retries})"
+        end
         retry
       end
     end
