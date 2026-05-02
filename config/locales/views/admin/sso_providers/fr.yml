@@ -21,6 +21,7 @@ fr:
         legacy_providers_title: "Fournisseurs configurés par environnement"
         legacy_providers_notice: "Ces fournisseurs sont configurés via des variables d'environnement ou YAML et ne peuvent pas être gérés via cette interface. Pour les gérer ici, migrez-les vers des fournisseurs sauvegardés en base de données en activant AUTH_PROVIDERS_SOURCE=db et en les recréant dans l'interface."
         env_configured: "Env/YAML"
+        lockout_prevented: "Cette action a été empêchée car elle désactiverait tous les fournisseurs SSO alors que la connexion locale est désactivée, bloquant l'accès à tous les utilisateurs."
       new:
         title: "Ajouter un fournisseur SSO"
         description: "Configurer un nouveau fournisseur d'authentification unique"

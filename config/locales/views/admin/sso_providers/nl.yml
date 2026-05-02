@@ -21,6 +21,7 @@ nl:
         legacy_providers_title: "Omgeving-Geconfigureerde Providers"
         legacy_providers_notice: "Deze providers zijn geconfigureerd via omgevingsvariabelen of YAML en kunnen niet via deze interface worden beheerd. Om ze hier te beheren, migreer ze naar database-gebaseerde providers door AUTH_PROVIDERS_SOURCE=db in te schakelen en ze opnieuw aan te maken in de UI."
         env_configured: "Omgeving/YAML"
+        lockout_prevented: "This action was prevented because it would disable all SSO providers while local login is disabled, locking everyone out."
       new:
         title: "SSO Provider toevoegen"
         description: "Configureer een nieuwe single sign-on authenticatieprovider"

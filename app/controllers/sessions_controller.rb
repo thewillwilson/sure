@@ -16,6 +16,18 @@ class SessionsController < ApplicationController
     # Clear any stale mobile SSO session flag from an abandoned mobile flow
     session.delete(:mobile_sso)
 
+    # Purge stale SSO state from previous login attempts to prevent
+    # ActionDispatch::Cookies::CookieOverflow (id_token JWTs are ~3KB).
+    session.delete(:id_token_hint)
+    session.delete(:sso_login_provider)
+    session.delete(:pending_oidc_auth)
+
+    # Clean up a stale session_token cookie left behind after logout
+    # or session revocation so the user starts with a clean slate.
+    if cookies.signed[:session_token].present? && Session.find_by(id: cookies.signed[:session_token]).nil?
+      cookies.delete(:session_token, httponly: true)
+    end
+
     begin
       demo = Rails.application.config_for(:demo)
       @prefill_demo_credentials = demo_host_match?(demo)
@@ -31,6 +43,15 @@ class SessionsController < ApplicationController
       @prefill_demo_credentials = false
       @email = params[:email]
       @password = params[:password]
+    end
+
+    # Auto-redirect to SSO in single-provider, SSO-only mode
+    if !@prefill_demo_credentials && @email.blank? && @password.blank?
+      providers = AuthConfig.sso_providers
+      if providers.size == 1 && !AuthConfig.local_login_form_visible? && AuthConfig.sso_auto_redirect? && flash[:alert].blank?
+        @provider = providers.first[:name].to_s
+        render "mobile_sso_start", layout: false
+      end
     end
   end
 
@@ -78,8 +99,8 @@ class SessionsController < ApplicationController
 
   def destroy
     user = Current.user
-    id_token = session[:id_token_hint]
-    login_provider = session[:sso_login_provider]
+    id_token = @session.id_token_hint
+    login_provider = @session.oidc_provider
 
     # Find the identity for the provider used during login, with fallback to first if session data lost
     oidc_identity = if login_provider.present?
@@ -90,16 +111,17 @@ class SessionsController < ApplicationController
 
     # Destroy local session
     @session.destroy
+    cookies.delete(:session_token, httponly: true)
     session.delete(:id_token_hint)
     session.delete(:sso_login_provider)
 
-    # Check if we should redirect to IdP for federated logout
-    if oidc_identity && id_token.present?
-      idp_logout_url = build_idp_logout_url(oidc_identity, id_token)
+    # Check if we should redirect to the provider for federated logout
+    if oidc_identity && (id_token.present? || saml_provider?(oidc_identity.provider))
+      federated_logout_url = build_federated_logout_url(oidc_identity, id_token)
 
-      if idp_logout_url
+      if federated_logout_url
         SsoAuditLog.log_logout_idp!(user: user, provider: oidc_identity.provider, request: request)
-        redirect_to idp_logout_url, allow_other_host: true
+        redirect_to federated_logout_url, allow_other_host: true
         return
       end
     end
@@ -155,6 +177,13 @@ class SessionsController < ApplicationController
     oidc_identity = OidcIdentity.find_by(provider: auth.provider, uid: auth.uid)
 
     if oidc_identity
+      unless oidc_identity.issuer_matches_config?
+        config_issuer = oidc_identity.provider_config&.dig(:issuer)
+        Rails.logger.warn("[SSO] Issuer mismatch: user_id=#{oidc_identity.user_id} stored=#{oidc_identity.issuer} config=#{config_issuer}")
+        redirect_to new_session_path, alert: t("sessions.openid_connect.issuer_mismatch")
+        return
+      end
+
       # Existing OIDC identity found - authenticate the user
       user = oidc_identity.user
       oidc_identity.record_authentication!
@@ -175,15 +204,19 @@ class SessionsController < ApplicationController
       end
 
       # Store id_token and provider for RP-initiated logout
-      session[:id_token_hint] = auth.credentials&.id_token if auth.credentials&.id_token
-      session[:sso_login_provider] = auth.provider
+      id_token = auth.credentials&.id_token
+      provider = auth.provider
 
       # MFA check: If user has MFA enabled, require verification
       if user.otp_required?
+        Rails.cache.write("mfa_sso:#{user.id}", { id_token: id_token, provider: provider }.compact, expires_in: 10.minutes)
         session[:mfa_user_id] = user.id
         redirect_to verify_mfa_path
       else
         @session = create_session_for(user)
+        @session.id_token_hint = id_token
+        @session.oidc_provider = provider
+        @session.save!
         flash[:notice] = t("invitations.accept_choice.joined_household") if accept_pending_invitation_for(user)
         redirect_to root_path
       end
@@ -332,7 +365,7 @@ class SessionsController < ApplicationController
       demo["hosts"].include?(request.host)
     end
 
-    def build_idp_logout_url(oidc_identity, id_token)
+    def build_federated_logout_url(oidc_identity, id_token)
       # Find the provider configuration using unified loader (supports both YAML and DB providers)
       provider_config = ProviderLoader.load_providers.find do |p|
         p[:name] == oidc_identity.provider
@@ -340,8 +373,16 @@ class SessionsController < ApplicationController
 
       return nil unless provider_config
 
+      strategy = provider_config[:strategy]
+
+      # SAML Single Logout (SLO): return the IdP SLO URL directly
+      if strategy == "saml"
+        idp_slo_url = provider_config.dig(:settings, "idp_slo_url") || provider_config.dig(:settings, :idp_slo_url)
+        return idp_slo_url.presence
+      end
+
       # For OIDC providers, fetch end_session_endpoint from discovery
-      if provider_config[:strategy] == "openid_connect" && provider_config[:issuer].present?
+      if strategy == "openid_connect" && provider_config[:issuer].present?
         begin
           discovery_url = discovery_url_for(provider_config[:issuer])
           response = Faraday.new(ssl: self.class.faraday_ssl_options).get(discovery_url) do |req|
@@ -362,6 +403,7 @@ class SessionsController < ApplicationController
             id_token_hint: id_token,
             post_logout_redirect_uri: post_logout_redirect
           }
+          params[:client_id] = provider_config[:client_id] if provider_config[:client_id].present?
 
           "#{end_session_endpoint}?#{params.to_query}"
         rescue Faraday::Error, JSON::ParserError, StandardError => e
@@ -371,6 +413,11 @@ class SessionsController < ApplicationController
       else
         nil
       end
+    end
+
+    def saml_provider?(provider_name)
+      config = ProviderLoader.load_providers.find { |p| p[:name] == provider_name }
+      config&.dig(:strategy) == "saml"
     end
 
     def discovery_url_for(issuer)

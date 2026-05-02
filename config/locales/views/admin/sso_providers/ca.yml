@@ -115,6 +115,7 @@ ca:
           status: Estat
           strategy: Estratègia
         title: Proveïdors SSO
+        lockout_prevented: "This action was prevented because it would disable all SSO providers while local login is disabled, locking everyone out."
       new:
         description: Configura un nou proveïdor d'autenticació d'inici de sessió únic
         title: Afegeix proveïdor SSO

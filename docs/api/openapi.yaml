@@ -878,9 +878,6 @@ components:
       required:
       - rows_count
       - valid_rows_count
-      - invalid_rows_count
-      - mappings_count
-      - unassigned_mappings_count
       properties:
         rows_count:
           type: integer

@@ -7,6 +7,8 @@ module Admin
     def index
       authorize SsoProvider
       @sso_providers = policy_scope(SsoProvider).order(:name)
+      @local_login_enabled = Setting.local_login_enabled
+      @sso_auto_redirect = Setting.sso_auto_redirect
 
       # Load runtime providers (from YAML/env) that might not be in the database
       # This helps show users that legacy providers are active but not manageable via UI
@@ -67,9 +69,19 @@ module Admin
     def destroy
       authorize @sso_provider
 
+      if !AuthConfig.local_login_enabled? && SsoProvider.enabled.where.not(id: @sso_provider.id).count == 0
+        return redirect_to admin_sso_providers_path, alert: t("admin.sso_providers.index.lockout_prevented")
+      end
+
       @sso_provider.destroy!
       log_provider_change(:destroy, @sso_provider)
       clear_provider_cache
+
+      if SsoProvider.enabled.count == 0 && !Setting.local_login_enabled
+        Setting.local_login_enabled = true
+        Setting.sso_auto_redirect = false
+        return redirect_to admin_sso_providers_path, alert: t(".last_provider_deleted_auto_enabled_local_login")
+      end
 
       redirect_to admin_sso_providers_path, notice: t(".success")
     end
@@ -77,9 +89,19 @@ module Admin
     def toggle
       authorize @sso_provider
 
+      if @sso_provider.enabled? && !AuthConfig.local_login_enabled? && SsoProvider.enabled.where.not(id: @sso_provider.id).count == 0
+        return redirect_to admin_sso_providers_path, alert: t("admin.sso_providers.index.lockout_prevented")
+      end
+
       @sso_provider.update!(enabled: !@sso_provider.enabled)
       log_provider_change(:toggle, @sso_provider)
       clear_provider_cache
+
+      if !@sso_provider.enabled? && SsoProvider.enabled.count == 0 && !Setting.local_login_enabled
+        Setting.local_login_enabled = true
+        Setting.sso_auto_redirect = false
+        return redirect_to admin_sso_providers_path, alert: t(".last_provider_disabled_auto_enabled_local_login")
+      end
 
       notice = @sso_provider.enabled? ? t(".success_enabled") : t(".success_disabled")
       redirect_to admin_sso_providers_path, notice: notice
@@ -98,9 +120,25 @@ module Admin
       }
     end
 
+    def update_settings
+      authorize SsoProvider, :update?
+
+      if setting_params[:local_login_enabled].present? && setting_params[:local_login_enabled] != "1" && SsoProvider.enabled.none? && AuthConfig.sso_providers.none?
+        return redirect_to admin_sso_providers_path, alert: t(".local_login_disabled_no_sso")
+      end
+
+      Setting.local_login_enabled = setting_params[:local_login_enabled] == "1" if setting_params[:local_login_enabled].present?
+      Setting.sso_auto_redirect = setting_params[:sso_auto_redirect] == "1" if setting_params[:sso_auto_redirect].present?
+      redirect_to admin_sso_providers_path, notice: t(".settings_updated")
+    end
+
     private
       def set_sso_provider
         @sso_provider = SsoProvider.find(params[:id])
+      end
+
+      def setting_params
+        params.fetch(:setting, {}).permit(:local_login_enabled, :sso_auto_redirect)
       end
 
       def sso_provider_params

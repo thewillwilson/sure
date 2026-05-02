@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# bin/dev-merge — create/update a merged dev branch on WSL
+# Usage: bin/dev-merge <base-branch> <feature-branch> [feature-branch...]
+#
+# Example: bin/dev-merge main sso-review-fixes truelayer-integration
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 <base-branch> <feature-branch> [feature-branch...]"
+  echo "Example: $0 main sso-review-fixes truelayer-integration"
+  exit 1
+fi
+
+BASE_BRANCH="$1"
+shift
+FEATURES=("$@")
+
+MERGE_BRANCH="dev/${BASE_BRANCH}+$(IFS=+; echo "${FEATURES[*]}")"
+
+echo "[dev-merge] Base: ${BASE_BRANCH}"
+echo "[dev-merge] Features: ${FEATURES[*]}"
+echo "[dev-merge] Merge branch: ${MERGE_BRANCH}"
+echo ""
+
+echo "[dev-merge] Fetching latest from remotes..."
+git fetch origin --quiet || true
+git fetch fork --quiet || true
+
+echo "[dev-merge] Checking out ${MERGE_BRANCH#dev/} as base..."
+# Ensure base branch is up to date
+git checkout "${BASE_BRANCH}" 2>/dev/null || git checkout -b "${BASE_BRANCH}" "origin/${BASE_BRANCH}"
+git reset --hard "origin/${BASE_BRANCH}"
+
+# Create or update the merge branch
+if git show-ref --verify --quiet "refs/heads/${MERGE_BRANCH}"; then
+  echo "[dev-merge] Merge branch exists, resetting to ${BASE_BRANCH}..."
+  git checkout "${MERGE_BRANCH}"
+  git reset --hard "${BASE_BRANCH}"
+else
+  echo "[dev-merge] Creating new merge branch..."
+  git checkout -b "${MERGE_BRANCH}" "${BASE_BRANCH}"
+fi
+
+echo ""
+CONFLICTS=""
+for feat in "${FEATURES[@]}"; do
+  echo "[dev-merge] Merging ${feat}..."
+  if ! git merge --no-edit "fork/${feat}" 2>/dev/null; then
+    echo "[dev-merge] ⚠️  CONFLICT merging ${feat} — aborting"
+    git merge --abort 2>/dev/null || true
+    CONFLICTS="${CONFLICTS} ${feat}"
+  else
+    echo "[dev-merge] ✓ ${feat} merged cleanly"
+  fi
+  echo ""
+done
+
+if [ -n "$CONFLICTS" ]; then
+  echo "[dev-merge] ❌ Aborted due to conflicts in:${CONFLICTS}"
+  echo "[dev-merge] Resolve manually, then rerun."
+  exit 1
+fi
+
+echo "[dev-merge] Pushing ${MERGE_BRANCH} to fork..."
+git push fork "${MERGE_BRANCH}" --force-with-lease
+
+echo ""
+echo "[dev-merge] ✅ Done. On LXC, run:"
+echo "    /opt/sure/bin/deploy-dev ${MERGE_BRANCH}"

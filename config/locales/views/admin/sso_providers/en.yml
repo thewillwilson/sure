@@ -6,7 +6,31 @@ en:
       index:
         title: "SSO Providers"
         description: "Manage single sign-on authentication providers for your instance"
+        login_behaviour:
+          title: "Login Behaviour"
+          local_login_label: "Local login"
+          local_login_help: "Allow users to sign in with email and password. Disabling this forces SSO-only authentication."
+          auto_redirect_label: "Auto-redirect to SSO"
+          auto_redirect_help: "When there is exactly one SSO provider and local login is disabled, automatically redirect the login page to the provider."
+        lockout_prevented: "This action was prevented because it would disable all SSO providers while local login is disabled, locking everyone out."
+        configured_providers_title: "Configured Providers"
+        empty_state: "No SSO providers configured yet."
         add_provider: "Add Provider"
+        actions:
+          edit: "Edit"
+          enable: "Enable"
+          disable: "Disable"
+          delete: "Delete"
+        confirm:
+          enable: "Are you sure you want to enable this provider?"
+          disable: "Are you sure you want to disable this provider?"
+          delete: "Are you sure you want to delete this provider? This action cannot be undone."
+        configuration_mode:
+          title: "Configuration Mode"
+          db_providers: "Database-backed providers"
+          db_providers_help: "Load providers from database instead of YAML config"
+          env_hint: "Set %{env_var} to enable database-backed providers. This allows changes without server restarts."
+          restart_notice: "Changes require a server restart to take effect."
         no_providers_title: "No SSO Providers"
         no_providers_message: "Get started by adding your first SSO provider."
         note: "Changes to SSO providers require a server restart to take effect. Alternatively, enable the AUTH_PROVIDERS_SOURCE=db feature flag to load providers from the database dynamically."
@@ -34,8 +58,13 @@ en:
       destroy:
         success: "SSO provider was successfully deleted."
         confirm: "Are you sure you want to delete this provider? This action cannot be undone."
+        last_provider_deleted_auto_enabled_local_login: "The last enabled SSO provider was deleted. Local login has been automatically re-enabled and SSO auto-redirect has been disabled to prevent lockout."
+      update_settings:
+        settings_updated: "SSO settings were successfully updated."
+        local_login_disabled_no_sso: "You cannot disable local login while no SSO providers are configured. Add and enable an SSO provider first."
       toggle:
         success_enabled: "SSO provider was successfully enabled."
+        last_provider_disabled_auto_enabled_local_login: "The last enabled SSO provider was disabled. Local login has been automatically re-enabled and SSO auto-redirect has been disabled to prevent lockout."
         success_disabled: "SSO provider was successfully disabled."
         confirm_enable: "Are you sure you want to enable this provider?"
         confirm_disable: "Are you sure you want to disable this provider?"

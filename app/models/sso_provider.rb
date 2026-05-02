@@ -29,6 +29,7 @@ class SsoProvider < ApplicationRecord
   }, allow_nil: true
 
   before_validation :normalize_icon
+  before_validation :preserve_client_secret_if_blank, on: :update
 
   # Strategy-specific validations
   validate :validate_oidc_fields, if: -> { strategy == "openid_connect" }
@@ -64,6 +65,10 @@ class SsoProvider < ApplicationRecord
       self.icon = icon.to_s.strip.presence
     end
 
+    def preserve_client_secret_if_blank
+      self.client_secret = client_secret_was if client_secret.blank? && client_secret_was.present?
+    end
+
     def validate_oidc_fields
       if issuer.blank?
         errors.add(:issuer, "is required for OpenID Connect providers")
@@ -72,7 +77,7 @@ class SsoProvider < ApplicationRecord
       end
 
       errors.add(:client_id, "is required for OpenID Connect providers") if client_id.blank?
-      errors.add(:client_secret, "is required for OpenID Connect providers") if client_secret.blank?
+      errors.add(:client_secret, "is required for OpenID Connect providers") if client_secret.blank? && (new_record? || client_secret_was.blank?)
 
       if redirect_uri.present? && !valid_url?(redirect_uri)
         errors.add(:redirect_uri, "must be a valid URL")
@@ -81,7 +86,7 @@ class SsoProvider < ApplicationRecord
 
     def validate_oauth_fields
       errors.add(:client_id, "is required for OAuth providers") if client_id.blank?
-      errors.add(:client_secret, "is required for OAuth providers") if client_secret.blank?
+      errors.add(:client_secret, "is required for OAuth providers") if client_secret.blank? && (new_record? || client_secret_was.blank?)
     end
 
     def validate_saml_fields

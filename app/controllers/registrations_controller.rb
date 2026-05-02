@@ -4,8 +4,9 @@ class RegistrationsController < ApplicationController
   layout "auth"
 
   before_action :ensure_signup_open, if: :self_hosted?
-  before_action :set_user, only: :create
   before_action :set_invitation
+  before_action :ensure_local_login_enabled, unless: :invitation_present?
+  before_action :set_user, only: :create
   before_action :validate_password_requirements, only: :create
 
   def new
@@ -50,6 +51,7 @@ class RegistrationsController < ApplicationController
     end
 
     def user_params(specific_param = nil)
+      return ActionController::Parameters.new unless self.params[:user].present?
       params = self.params.require(:user).permit(:name, :email, :password, :password_confirmation, :invite_code, :invitation)
       specific_param ? params[specific_param] : params
     end
@@ -109,5 +111,15 @@ class RegistrationsController < ApplicationController
       return unless Setting.onboarding_state == "closed"
 
       redirect_to new_session_path, alert: t("registrations.closed")
+    end
+
+    def ensure_local_login_enabled
+      return if AuthConfig.local_login_enabled?
+
+      redirect_to new_session_path, alert: t("registrations.local_login_disabled")
+    end
+
+    def invitation_present?
+      @invitation.present?
     end
 end

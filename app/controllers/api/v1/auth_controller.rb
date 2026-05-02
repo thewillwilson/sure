@@ -339,7 +339,7 @@ module Api
         end
 
         def sso_exchange_params
-          params.require(:code)
+          params[:code]
         end
 
         def mobile_user_payload(user)

@@ -21,6 +21,7 @@ pl:
         legacy_providers_title: Dostawcy skonfigurowani przez zmienne środowiskowe
         legacy_providers_notice: Ci dostawcy są skonfigurowani przez zmienne środowiskowe lub YAML i nie można nimi zarządzać przez ten interfejs. Aby zarządzać nimi tutaj, przenieś ich do dostawców opartych na bazie danych, włączając AUTH_PROVIDERS_SOURCE=db i odtwarzając ich w interfejsie.
         env_configured: Środowisko/YAML
+        lockout_prevented: "Ta akcja została zablokowana, ponieważ spowodowałaby wyłączenie wszystkich dostawców SSO przy wyłączonym logowaniu lokalnym, co zablokowałoby dostęp wszystkim użytkownikom."
       new:
         title: Dodaj dostawcę SSO
         description: Skonfiguruj nowego dostawcę uwierzytelniania jednokrotnego logowania

@@ -1,10 +1,5 @@
-uploaded = local_assigns[:uploaded]
-uploaded = import.uploaded? if uploaded.nil?
-configured = local_assigns[:configured]
-configured = import.configured_for_status_detail? if configured.nil?
-
-json.uploaded uploaded
-json.configured configured
+json.uploaded import.uploaded?
+json.configured import.configured?
 json.terminal import.complete? || import.failed? || import.revert_failed?
 
 if include_validation_stats

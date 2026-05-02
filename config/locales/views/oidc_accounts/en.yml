@@ -1,6 +1,7 @@
 ---
 en:
   oidc_accounts:
+    local_login_disabled: "Local login is disabled. Please use your SSO provider to sign in."
     link:
       title_link: Link OIDC Account
       title_create: Create Account

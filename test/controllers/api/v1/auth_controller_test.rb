@@ -837,4 +837,88 @@ class Api::V1::AuthControllerTest < ActionDispatch::IntegrationTest
     assert_equal "AI is not available for your account", response_data["error"]
     assert_not user.reload.ai_enabled
   end
+
+  # SSO Exchange tests
+  test "sso_exchange returns tokens and user info for a valid authorization code" do
+    user = users(:family_admin)
+    code = SecureRandom.urlsafe_base64(32)
+
+    Rails.cache.write("mobile_sso:#{code}", {
+      access_token: "test-access-token-abc",
+      refresh_token: "test-refresh-token-xyz",
+      token_type: "Bearer",
+      expires_in: 30.days.to_i,
+      created_at: 1_700_000_000,
+      user_id: user.id,
+      user_email: user.email,
+      user_first_name: user.first_name,
+      user_last_name: user.last_name,
+      user_ui_layout: user.ui_layout,
+      user_ai_enabled: user.ai_enabled?
+    }, expires_in: 5.minutes)
+
+    post "/api/v1/auth/sso_exchange", params: { code: code }, as: :json
+
+    assert_response :success
+    data = JSON.parse(response.body)
+
+    assert_equal "test-access-token-abc", data["access_token"]
+    assert_equal "test-refresh-token-xyz", data["refresh_token"]
+    assert_equal "Bearer", data["token_type"]
+    assert_equal 30.days.to_i, data["expires_in"]
+    assert_equal user.id, data.dig("user", "id")
+    assert_equal user.email, data.dig("user", "email")
+    assert_equal user.first_name, data.dig("user", "first_name")
+    assert_equal user.last_name, data.dig("user", "last_name")
+
+    # Code is single-use; the cache entry must be gone after exchange
+    assert_nil Rails.cache.read("mobile_sso:#{code}")
+  end
+
+  test "sso_exchange rejects a reused authorization code" do
+    user = users(:family_admin)
+    code = SecureRandom.urlsafe_base64(32)
+
+    Rails.cache.write("mobile_sso:#{code}", {
+      access_token: "tok",
+      refresh_token: "rtok",
+      token_type: "Bearer",
+      expires_in: 30.days.to_i,
+      created_at: Time.current.to_i,
+      user_id: user.id,
+      user_email: user.email,
+      user_first_name: user.first_name,
+      user_last_name: user.last_name,
+      user_ui_layout: user.ui_layout,
+      user_ai_enabled: user.ai_enabled?
+    }, expires_in: 5.minutes)
+
+    # First exchange succeeds and consumes the code
+    post "/api/v1/auth/sso_exchange", params: { code: code }, as: :json
+    assert_response :success
+
+    # Second exchange with the same code must be rejected
+    post "/api/v1/auth/sso_exchange", params: { code: code }, as: :json
+    assert_response :unauthorized
+    data = JSON.parse(response.body)
+    assert_equal "invalid_or_expired_code", data["error"]
+  end
+
+  test "sso_exchange rejects an invalid authorization code" do
+    post "/api/v1/auth/sso_exchange", params: { code: "no-such-code" }, as: :json
+
+    assert_response :unauthorized
+    data = JSON.parse(response.body)
+    assert_equal "invalid_or_expired_code", data["error"]
+  end
+
+  test "sso_exchange rejects a missing or blank authorization code" do
+    post "/api/v1/auth/sso_exchange", params: {}, as: :json
+    assert_response :unauthorized
+    assert_equal "invalid_or_expired_code", JSON.parse(response.body)["error"]
+
+    post "/api/v1/auth/sso_exchange", params: { code: "" }, as: :json
+    assert_response :unauthorized
+    assert_equal "invalid_or_expired_code", JSON.parse(response.body)["error"]
+  end
 end

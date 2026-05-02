@@ -31,7 +31,9 @@ module Authentication
       cookie_value = cookies.signed[:session_token]
 
       if cookie_value.present?
-        Session.find_by(id: cookie_value)
+        Session.find_by(id: cookie_value).tap do |session|
+          cookies.delete(:session_token, httponly: true) if session.nil?
+        end
       else
         nil
       end

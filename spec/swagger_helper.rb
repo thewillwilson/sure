@@ -527,7 +527,7 @@ RSpec.configure do |config|
           },
           ImportStats: {
             type: :object,
-            required: %w[rows_count valid_rows_count invalid_rows_count mappings_count unassigned_mappings_count],
+            required: %w[rows_count valid_rows_count],
             properties: {
               rows_count: { type: :integer, minimum: 0 },
               valid_rows_count: { type: :integer, minimum: 0 },

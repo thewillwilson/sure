@@ -34,6 +34,12 @@ class OidcAccountsController < ApplicationController
     user = User.authenticate_by(email: params[:email], password: params[:password])
 
     if user
+      # Check post-auth only: checking before auth leaks account eligibility via distinct response paths
+      unless AuthConfig.local_login_enabled? || AuthConfig.local_login_allowed_for?(user)
+        redirect_to settings_security_path, alert: t("oidc_accounts.local_login_disabled")
+        return
+      end
+
       # Create the OIDC identity link
       oidc_identity = OidcIdentity.create_from_omniauth(
         build_auth_hash(@pending_auth),

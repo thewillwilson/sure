@@ -258,10 +258,6 @@ class Import < ApplicationRecord
     uploaded? && rows_count > 0
   end
 
-  def configured_for_status_detail?
-    configured?
-  end
-
   def cleaned?
     configured? && rows.all?(&:valid?)
   end
