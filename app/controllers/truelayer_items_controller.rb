@@ -211,7 +211,7 @@ class TruelayerItemsController < ApplicationController
         redirect_uri:  callback_truelayer_items_url,
         state:         nonce
       )
-      redirect_to result[:result], allow_other_host: true and return if result[:success]
+      redirect_to result[:result], allow_other_host: true and return if result[:result].present? && result[:status] == "Succeeded"
     end
 
     redirect_to authorize_url(@truelayer_item, nonce), allow_other_host: true

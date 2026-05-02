@@ -52,7 +52,7 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "reauthorize stores nonce in shared oauth pending session with reauth type" do
     @truelayer_item.update!(access_token: "tok", status: :requires_update)
-    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://auth.truelayer.com/reauth", success: true })
+    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://auth.truelayer.com/reauth", status: "Succeeded" })
 
     post reauthorize_truelayer_item_url(@truelayer_item)
 
@@ -65,7 +65,7 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "reauthorize redirects to reauth_uri skipping provider picker when refresh token present" do
     @truelayer_item.update!(access_token: "tok", refresh_token: "ref", status: :requires_update)
-    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://bank.example.com/reauth-direct", success: true })
+    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://bank.example.com/reauth-direct", status: "Succeeded" })
 
     post reauthorize_truelayer_item_url(@truelayer_item)
 
@@ -74,7 +74,7 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "reauthorize falls back to standard oauth when reauth_uri is unavailable" do
     @truelayer_item.update!(access_token: "tok", refresh_token: "ref", status: :requires_update)
-    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: nil, success: false })
+    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: nil, status: "Failed" })
     Provider::Truelayer.any_instance.stubs(:auth_url).returns("https://auth.truelayer.com/")
 
     post reauthorize_truelayer_item_url(@truelayer_item)
@@ -84,7 +84,7 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "callback with reauth type updates tokens and redirects to providers" do
     @truelayer_item.update!(access_token: "old_tok", refresh_token: "ref", status: :requires_update)
-    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://auth.truelayer.com/reauth", success: true })
+    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://auth.truelayer.com/reauth", status: "Succeeded" })
     post reauthorize_truelayer_item_url(@truelayer_item)
     nonce = session[:truelayer_oauth_pending]["state"]
 
@@ -101,7 +101,7 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "callback rejects reauth when state does not match" do
     @truelayer_item.update!(access_token: "tok", refresh_token: "ref", status: :requires_update)
-    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://auth.truelayer.com/reauth", success: true })
+    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://auth.truelayer.com/reauth", status: "Succeeded" })
     post reauthorize_truelayer_item_url(@truelayer_item)
 
     real_nonce = session[:truelayer_oauth_pending]["state"]
@@ -203,7 +203,7 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
 
   test "reauthorize sets admin flag in oauth pending state" do
     @truelayer_item.update!(access_token: "tok", refresh_token: "ref", status: :requires_update)
-    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://auth.truelayer.com/reauth", success: true })
+    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://auth.truelayer.com/reauth", status: "Succeeded" })
     post reauthorize_truelayer_item_url(@truelayer_item)
     pending = session[:truelayer_oauth_pending]
     assert_equal true, pending["admin"]
@@ -276,7 +276,7 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
       status:             :requires_update,
       consent_expires_at: 1.year.from_now
     )
-    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://auth.truelayer.com/reauth", success: true })
+    Provider::Truelayer.any_instance.stubs(:generate_reauth_uri).returns({ result: "https://auth.truelayer.com/reauth", status: "Succeeded" })
     post reauthorize_truelayer_item_url(@truelayer_item)
     nonce = session[:truelayer_oauth_pending]["state"]
 
