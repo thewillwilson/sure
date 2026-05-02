@@ -303,6 +303,42 @@ class TruelayerItemsControllerTest < ActionDispatch::IntegrationTest
     assert flash[:alert].present?
   end
 
+  # duplicate-link guard tests
+
+  test "link_existing_account redirects with alert when account is already linked" do
+    truelayer_account = @truelayer_item.truelayer_accounts.create!(
+      name: "My Bank", account_id: "acct_link_dup", account_kind: "account", currency: "GBP"
+    )
+    account = accounts(:depository)
+
+    AccountProvider.stubs(:create!).raises(ActiveRecord::RecordNotUnique.new("duplicate key"))
+
+    post link_existing_account_truelayer_items_url, params: {
+      account_id:           account.id,
+      truelayer_account_id: truelayer_account.id
+    }
+
+    assert_redirected_to accounts_path
+    assert flash[:alert].present?
+  end
+
+  test "complete_account_setup redirects with alert when account is already linked" do
+    truelayer_account = @truelayer_item.truelayer_accounts.create!(
+      name: "My Bank", account_id: "acct_setup_dup", account_kind: "account", currency: "GBP"
+    )
+    account = accounts(:depository)
+
+    AccountProvider.stubs(:create!).raises(ActiveRecord::RecordNotUnique.new("duplicate key"))
+
+    post complete_account_setup_truelayer_item_url(@truelayer_item), params: {
+      truelayer_account_id: truelayer_account.id,
+      account_id:           account.id
+    }
+
+    assert_redirected_to setup_accounts_truelayer_item_path(@truelayer_item)
+    assert flash[:alert].present?
+  end
+
   # Admin authorization tests
 
   test "non-admin cannot access authorize" do
