@@ -17,8 +17,7 @@ class OauthCallbacksController < ApplicationController
       }
     )
     session[:oauth_state] = connection.id
-    auth = Provider::Auth::OAuth2.new(connection)
-    redirect_to auth.authorize_url(
+    redirect_to connection.auth.authorize_url(
       redirect_uri: redirect_uri,
       state:        connection.id
     ), allow_other_host: true
@@ -34,8 +33,7 @@ class OauthCallbacksController < ApplicationController
     end
 
     connection = Current.family.provider_connections.find(params[:state])
-    auth = Provider::Auth::OAuth2.new(connection)
-    auth.exchange_code(code: params[:code])
+    connection.auth.exchange_code(code: params[:code])
     connection.discover_accounts!
     redirect_to setup_provider_connection_path(connection),
                 notice: t("provider.connections.connected")

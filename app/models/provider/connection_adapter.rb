@@ -52,6 +52,14 @@ module Provider::ConnectionAdapter
     raise NotImplementedError, "#{self} must define .build_sure_account(provider_account, family:)"
   end
 
+  # Auth backend used by Provider::Connection#auth to handle the credential
+  # lifecycle (token exchange, refresh, reauth). OAuth2 adapters return
+  # Provider::Auth::OAuth2; embedded-link adapters (e.g. Plaid Link) return
+  # Provider::Auth::EmbeddedLink. The class must accept (connection) on init.
+  def auth_class
+    raise NotImplementedError, "#{self} must define .auth_class"
+  end
+
   # ---- Optional (with defaults) ------------------------------------------
 
   def beta? = false

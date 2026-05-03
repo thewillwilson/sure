@@ -68,7 +68,25 @@ class Provider::ConnectionTest < ActiveSupport::TestCase
     error = assert_raises(NotImplementedError) { conn.send(:syncer) }
     assert_match "does not define syncer_class", error.message
   ensure
-    Provider::Registry.instance_variable_get(:@oauth_providers)&.delete("stub_no_syncer")
+    Provider::ConnectionRegistry.send(:registry).delete("stub_no_syncer")
+  end
+
+  test "auth returns instance of adapter's declared auth_class" do
+    conn = provider_connections(:monzo_connection)
+    assert_instance_of Provider::Auth::OAuth2, conn.auth
+  end
+
+  test "auth raises NotImplementedError for adapter without auth_class" do
+    stub_adapter = Class.new { extend Provider::ConnectionAdapter }
+    Provider::ConnectionRegistry.register("stub_no_auth", stub_adapter)
+    conn = Provider::Connection.new(
+      family: families(:empty), provider_key: "stub_no_auth",
+      auth_type: "oauth2", credentials: {}, status: :good
+    )
+    error = assert_raises(NotImplementedError) { conn.auth }
+    assert_match "auth_class", error.message
+  ensure
+    Provider::ConnectionRegistry.send(:registry).delete("stub_no_auth")
   end
 
   test "institution_name returns provider display_name from raw_payload" do

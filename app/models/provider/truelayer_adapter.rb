@@ -12,6 +12,8 @@ class Provider::TruelayerAdapter
 
   def self.syncer_class = Provider::TruelayerSyncer
 
+  def self.auth_class = Provider::Auth::OAuth2
+
   def self.reauth_url(connection, redirect_uri:, state:)
     config = connection.provider_family_config
     Provider::Truelayer.reauth_uri(

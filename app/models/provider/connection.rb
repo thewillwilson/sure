@@ -34,9 +34,17 @@ class Provider::Connection < ApplicationRecord
   # Adapter syncer protocol contract: every adapter's syncer class MUST
   # implement #discover_accounts_only — fetch the upstream account list and
   # upsert provider_accounts rows, without syncing transactions or balances.
-  # Called from OauthCallbacksController#create after token exchange.
+  # Called after auth credentials are first stored.
   def discover_accounts!
     syncer.discover_accounts_only
+  end
+
+  # Polymorphic auth backend dispatch. The adapter declares which auth class
+  # handles its credential lifecycle: Provider::Auth::OAuth2 for OAuth providers
+  # (TrueLayer, Mercury, etc.), Provider::Auth::EmbeddedLink for Plaid-Link-style
+  # providers (Plaid, MX, Yodlee). The auth class accepts (connection) on init.
+  def auth
+    Provider::ConnectionRegistry.adapter_for(provider_key).auth_class.new(self)
   end
 
   private

@@ -53,8 +53,7 @@ class ProviderConnectionsController < ApplicationController
 
   def reauth
     session[:oauth_state] = @connection.id
-    auth = Provider::Auth::OAuth2.new(@connection)
-    redirect_to auth.reauth_url(state: @connection.id), allow_other_host: true
+    redirect_to @connection.auth.reauth_url(state: @connection.id), allow_other_host: true
   end
 
   def sync
