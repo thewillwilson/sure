@@ -1,0 +1,22 @@
+---
+en:
+  provider_family_configs:
+    new:
+      title: "Configure TrueLayer"
+      client_id_label: "Client ID"
+      client_secret_label: "Client Secret"
+      connect_button: "Save and Connect"
+    edit:
+      title: "Update TrueLayer Credentials"
+      client_id_label: "Client ID"
+      client_secret_label: "Client Secret"
+      secret_hint: "Leave blank to keep your existing secret"
+      save_button: "Save"
+    truelayer_instructions:
+      title: "Setup instructions"
+      step_console_html: "Visit the <a href='https://console.truelayer.com' target='_blank' class='link'>TrueLayer Console</a> and open your application (or create one)."
+      step_redirect_uri: "Add the Redirect URI below to your application's allowed redirect URIs."
+      step_credentials: "Copy your Client ID and Client Secret into the fields below."
+      redirect_uri_label: "Redirect URI (copy this into TrueLayer Console)"
+      copy: "Copy"
+      copied: "Copied!"

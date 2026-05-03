@@ -28,6 +28,26 @@ class Family::SyncerTest < ActiveSupport::TestCase
     assert_equal "completed", family_sync.reload.status
   end
 
+  test "syncs provider connections" do
+    family = families(:empty)
+    conn = Provider::Connection.create!(
+      family: family, provider_key: "truelayer", auth_type: "oauth2",
+      credentials: {}, status: :good
+    )
+    _non_syncable = Provider::Connection.create!(
+      family: family, provider_key: "truelayer", auth_type: "oauth2",
+      credentials: {}, status: :disconnected
+    )
+    family_sync = syncs(:family)
+
+    Provider::Connection.any_instance
+                        .expects(:sync_later)
+                        .with(parent_sync: family_sync, window_start_date: nil, window_end_date: nil)
+                        .once
+
+    Family::Syncer.new(family).perform_sync(family_sync)
+  end
+
   test "only applies active rules during sync" do
     family_sync = syncs(:family)
 
@@ -61,6 +81,7 @@ class Family::SyncerTest < ActiveSupport::TestCase
     LunchflowItem.any_instance.stubs(:sync_later)
     EnableBankingItem.any_instance.stubs(:sync_later)
     SophtronItem.any_instance.stubs(:sync_later)
+    Provider::Connection.any_instance.stubs(:sync_later)
 
     syncer.perform_sync(family_sync)
     syncer.perform_post_sync

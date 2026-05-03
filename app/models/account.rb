@@ -10,6 +10,7 @@ class Account < ApplicationRecord
   belongs_to :owner, class_name: "User", optional: true
   belongs_to :import, optional: true
 
+  has_many :provider_accounts, class_name: "Provider::Account", dependent: :nullify
   has_many :account_shares, dependent: :destroy
   has_many :shared_users, through: :account_shares, source: :user
   has_many :import_mappings, as: :mappable, dependent: :destroy, class_name: "Import::Mapping"
@@ -31,7 +32,9 @@ class Account < ApplicationRecord
   scope :alphabetically, -> { order(:name) }
   scope :manual, -> {
     left_joins(:account_providers)
+      .left_joins(:provider_accounts)
       .where(account_providers: { id: nil })
+      .where(provider_accounts: { id: nil })
       .where(plaid_account_id: nil, simplefin_account_id: nil)
   }
 
@@ -305,6 +308,8 @@ class Account < ApplicationRecord
       "https://cdn.brandfetch.io/#{institution_domain}/icon/fallback/lettermark/w/#{logo_size}/h/#{logo_size}?c=#{Setting.brand_fetch_client_id}"
     elsif provider&.logo_url.present?
       provider.logo_url
+    elsif (uri = provider_accounts.first&.safe_logo_uri).present?
+      uri
     elsif logo.attached?
       Rails.application.routes.url_helpers.rails_blob_path(logo, only_path: true)
     end

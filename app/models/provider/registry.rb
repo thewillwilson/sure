@@ -22,6 +22,39 @@ class Provider::Registry
       region.to_sym == :us ? plaid_us : plaid_eu
     end
 
+    def register_oauth_provider(key, adapter_class)
+      @oauth_providers ||= {}
+      @oauth_providers[key] = adapter_class
+    end
+
+    def oauth_provider?(key)
+      Provider::Factory.ensure_adapters_loaded
+      (@oauth_providers ||= {}).key?(key.to_s)
+    end
+
+    def oauth_provider_keys
+      Provider::Factory.ensure_adapters_loaded
+      (@oauth_providers ||= {}).keys
+    end
+
+    def oauth_provider_adapter(key)
+      Provider::Factory.ensure_adapters_loaded
+      (@oauth_providers ||= {})[key.to_s] or raise NotImplementedError, "No OAuth provider registered for: #{key}"
+    end
+
+    def syncer_class_for(key)
+      Provider::Factory.ensure_adapters_loaded
+      adapter = oauth_provider_adapter(key)
+      unless adapter.respond_to?(:syncer_class)
+        raise NotImplementedError, "Adapter for '#{key}' (#{adapter}) does not define syncer_class"
+      end
+      adapter.syncer_class
+    end
+
+    def oauth_config_for(key)
+      oauth_provider_adapter(key).new(nil)
+    end
+
     private
       def stripe
         secret_key = ENV["STRIPE_SECRET_KEY"]

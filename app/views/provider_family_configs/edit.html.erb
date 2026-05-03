@@ -1,0 +1,28 @@
+<%= content_for :page_title, t(".title") %>
+
+<div class="container mx-auto max-w-lg py-8">
+  <h1 class="text-2xl font-semibold text-primary mb-6"><%= t(".title") %></h1>
+
+  <% if lookup_context.exists?("provider_family_configs/#{@config.provider_key}_instructions", [], true) %>
+    <%= render "provider_family_configs/#{@config.provider_key}_instructions" %>
+  <% end %>
+
+  <%= styled_form_with model: @config, url: provider_family_config_path(@config) do |f| %>
+    <div class="space-y-4">
+      <%= f.text_field :client_id, label: t(".client_id_label") %>
+
+      <div>
+        <%= f.password_field :client_secret, label: t(".client_secret_label"),
+                        placeholder: @config.client_secret.present? ? "••••••••" : nil %>
+        <% if @config.client_secret.present? %>
+          <p class="text-xs text-secondary mt-1"><%= t(".secret_hint") %></p>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="flex justify-end mt-6">
+      <%= f.submit t(".save_button"),
+                  class: "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium text-inverse bg-inverse hover:bg-inverse-hover transition-colors" %>
+    </div>
+  <% end %>
+</div>

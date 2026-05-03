@@ -1,0 +1,25 @@
+<%= content_for :page_title, t(".title") %>
+
+<div class="container mx-auto max-w-2xl py-8">
+  <h1 class="text-2xl font-semibold text-primary mb-2"><%= t(".title") %></h1>
+  <p class="text-secondary mb-6"><%= t(".description") %></p>
+
+  <%= form_with url: save_setup_provider_connection_path(@connection) do |f| %>
+    <div class="space-y-3">
+      <% @unlinked.each do |pa| %>
+        <div class="flex items-center gap-4 p-3 rounded-lg border border-primary">
+          <span class="flex-1 text-sm text-primary"><%= pa.external_name %> (<%= pa.currency %>)</span>
+          <%= f.select "mappings[#{pa.id}]",
+              [[ t(".create_new"), "new" ]] + @accounts.map { |a| [a.name, a.id] },
+              { include_blank: t(".skip") },
+              class: "rounded-md border border-primary text-sm p-1 text-primary bg-container" %>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="flex justify-end mt-6">
+      <%= f.submit t(".save_mapping"),
+                  class: "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium text-inverse bg-inverse hover:bg-inverse-hover transition-colors" %>
+    </div>
+  <% end %>
+</div>

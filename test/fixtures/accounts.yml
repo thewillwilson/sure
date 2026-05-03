@@ -99,3 +99,17 @@ crypto:
   accountable_type: Crypto
   accountable: one
   status: active
+
+# Linked to provider_accounts(:monzo_current). Keep separate from :depository
+# so that fixture stays in the manual scope for unrelated tests.
+# Currency must match the family's primary currency (USD) to avoid triggering
+# extra exchange-rate fetches in unrelated tests.
+truelayer_depository:
+  family: dylan_family
+  owner: family_admin
+  name: Monzo Current Account
+  balance: 1500
+  currency: USD
+  accountable_type: Depository
+  accountable: one
+  status: active

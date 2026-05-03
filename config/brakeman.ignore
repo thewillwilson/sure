@@ -1,6 +1,24 @@
 {
   "ignored_warnings": [
     {
+      "warning_type": "Dynamic Render Path",
+      "warning_code": 15,
+      "fingerprint": "762f2a18c7709064bddde90520ae7bd103d7db7b81378f858fbf6d394fa6821e",
+      "check_name": "Render",
+      "message": "Render path contains parameter value",
+      "file": "app/views/provider_family_configs/edit.html.erb",
+      "line": 8,
+      "link": "https://brakemanscanner.org/docs/warning_types/dynamic_render_path/",
+      "code": "render(action => \"provider_family_configs/#{Current.family.provider_family_configs.find(params[:id]).provider_key}_instructions\", {})",
+      "location": {
+        "type": "template",
+        "template": "provider_family_configs/edit"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "note": "provider_key is DB-stored and format-validated to /\\A[a-z0-9_]+\\z/; lookup_context.exists? guard prevents rendering non-existent partials"
+    },
+    {
       "warning_type": "Redirect",
       "warning_code": 18,
       "fingerprint": "556f2fdd1f091ed50811cb2cce28dd2b987cd0a2eed4d19bea138c8c083a3a5d",
@@ -195,7 +213,49 @@
         22
       ],
       "note": ""
+    },
+    {
+      "warning_type": "Redirect",
+      "warning_code": 18,
+      "fingerprint": "3e74bc632e8cc60b60fc7d3b1c2259db02bf824121229dd4acdd71be59ecd9bd",
+      "check_name": "Redirect",
+      "message": "Possible unprotected redirect",
+      "file": "app/controllers/oauth_callbacks_controller.rb",
+      "line": 21,
+      "link": "https://brakemanscanner.org/docs/warning_types/redirect/",
+      "code": "redirect_to(Provider::Auth::OAuth2.new(...).authorize_url(...), :allow_other_host => true)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "OauthCallbacksController",
+        "method": "new"
+      },
+      "user_input": null,
+      "confidence": "Weak",
+      "cwe_id": [ 601 ],
+      "note": "Intentional redirect to provider OAuth authorization URL; target is constructed from registered adapter config, not user input. Initiation is POST-only with state binding to session."
+    },
+    {
+      "warning_type": "Redirect",
+      "warning_code": 18,
+      "fingerprint": "c067aeef8709d1241625d3f32281cf04e1aff03a29258ac58fcf037a9581ea77",
+      "check_name": "Redirect",
+      "message": "Possible unprotected redirect",
+      "file": "app/controllers/provider_connections_controller.rb",
+      "line": 57,
+      "link": "https://brakemanscanner.org/docs/warning_types/redirect/",
+      "code": "redirect_to(Provider::Auth::OAuth2.new(...).reauth_url(...), :allow_other_host => true)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "ProviderConnectionsController",
+        "method": "reauth"
+      },
+      "user_input": null,
+      "confidence": "Weak",
+      "cwe_id": [ 601 ],
+      "note": "Intentional redirect to provider OAuth re-authentication URL; family-scoped connection lookup prevents cross-family access. Action is POST with CSRF protection."
     }
   ],
-  "brakeman_version": "7.1.0"
+  "brakeman_version": "7.1.2"
 }

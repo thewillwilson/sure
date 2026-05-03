@@ -2,6 +2,24 @@ require "sidekiq/web"
 require "sidekiq/cron/web"
 
 Rails.application.routes.draw do
+  post "connect/:provider",         to: "oauth_callbacks#new",    as: :new_oauth_callbacks
+  get "connect/:provider/callback", to: "oauth_callbacks#create", as: :create_oauth_callbacks
+
+  resources :provider_family_configs, only: [ :new, :create, :edit, :update, :destroy ]
+  resources :provider_connections, only: [ :show, :destroy ] do
+    collection do
+      get  :select
+      post :link
+      post :skip
+    end
+    member do
+      get  :setup
+      post :save_setup
+      post :reauth
+      post :sync
+    end
+  end
+
   resources :indexa_capital_items, only: [ :index, :new, :create, :show, :edit, :update, :destroy ] do
     collection do
       get :preload_accounts

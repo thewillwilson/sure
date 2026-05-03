@@ -26,6 +26,9 @@ class Family < ApplicationRecord
   has_many :accounts, dependent: :destroy
   has_many :invitations, dependent: :destroy
 
+  has_many :provider_family_configs, class_name: "Provider::FamilyConfig", dependent: :destroy
+  has_many :provider_connections, class_name: "Provider::Connection", dependent: :destroy
+
   has_many :imports, dependent: :destroy
   has_many :family_exports, dependent: :destroy
 

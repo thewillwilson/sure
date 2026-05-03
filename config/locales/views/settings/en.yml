@@ -228,3 +228,17 @@ en:
       enable_banking_panel:
         callback_url_instruction: "For the callback URL, use %{callback_url}."
         connection_error: Connection Error
+      oauth_provider_panel:
+        connected:
+          one: "Connected (1 connection)"
+          other: "Connected (%{count} connections)"
+        configured_not_connected: "Configured but no active connections"
+        not_configured: "Not configured"
+        configure: "Configure"
+        add_connection: "Add connection"
+        edit_credentials: "Edit credentials"
+        manage: "Manage"
+        requires_reauth: "Reconnect required"
+        disconnected: "Disconnected"
+        status_good: "Connected"
+        reconnect: "Reconnect"

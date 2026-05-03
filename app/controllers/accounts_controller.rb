@@ -21,6 +21,7 @@ class AccountsController < ApplicationController
     @snaptrade_items = visible_provider_items(family.snaptrade_items.ordered.includes(:syncs, :snaptrade_accounts))
     @indexa_capital_items = visible_provider_items(family.indexa_capital_items.ordered.includes(:syncs, :indexa_capital_accounts))
     @sophtron_items = visible_provider_items(family.sophtron_items.ordered.includes(:syncs, :sophtron_accounts))
+    @provider_connections = family.provider_connections.where.not(status: :pending).order(:created_at).includes(provider_accounts: :account)
 
     # Build sync stats maps for all providers
     build_sync_stats_maps
@@ -31,9 +32,12 @@ class AccountsController < ApplicationController
   end
 
   def new
-    # Get all registered providers with any credentials configured
     @provider_configs = Provider::Factory.registered_adapters.flat_map do |adapter_class|
       adapter_class.connection_configs(family: family)
+    end
+
+    @provider_configs += Provider::Registry.oauth_provider_keys.flat_map do |key|
+      Provider::Registry.oauth_provider_adapter(key).connection_configs(family: family)
     end
   end
 
@@ -187,6 +191,12 @@ class AccountsController < ApplicationController
       account_type: account_type_name,
       family: family
     )
+
+    provider_configs += Provider::Registry.oauth_provider_keys.flat_map do |key|
+      adapter = Provider::Registry.oauth_provider_adapter(key)
+      next [] unless adapter.supported_account_types.include?(account_type_name)
+      adapter.connection_configs(family: family)
+    end
 
     # Build available providers list with paths resolved for this specific account
     # Filter out providers that don't support linking to existing accounts

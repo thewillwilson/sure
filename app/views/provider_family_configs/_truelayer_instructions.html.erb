@@ -1,0 +1,23 @@
+<div class="mb-6 p-4 rounded-lg bg-surface border border-primary space-y-3">
+  <h2 class="text-sm font-semibold text-primary"><%= t("provider_family_configs.truelayer_instructions.title") %></h2>
+  <ol class="list-decimal list-inside space-y-1 text-sm text-secondary">
+    <li><%= t("provider_family_configs.truelayer_instructions.step_console_html") %></li>
+    <li><%= t("provider_family_configs.truelayer_instructions.step_redirect_uri") %></li>
+    <li><%= t("provider_family_configs.truelayer_instructions.step_credentials") %></li>
+  </ol>
+  <div class="mt-3">
+    <p class="text-xs font-medium text-secondary mb-1"><%= t("provider_family_configs.truelayer_instructions.redirect_uri_label") %></p>
+    <div class="flex items-center gap-2 p-2 rounded bg-surface-inset border border-primary"
+         data-controller="clipboard"
+         data-clipboard-success-content-value="<%= t("provider_family_configs.truelayer_instructions.copied") %>">
+      <code class="text-xs text-primary flex-1 break-all"
+            data-clipboard-target="source"><%= create_oauth_callbacks_url(provider: "truelayer") %></code>
+      <button type="button"
+              data-action="click->clipboard#copy"
+              data-clipboard-target="button"
+              class="shrink-0 text-xs text-secondary hover:text-primary">
+        <%= t("provider_family_configs.truelayer_instructions.copy") %>
+      </button>
+    </div>
+  </div>
+</div>
