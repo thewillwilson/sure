@@ -91,8 +91,8 @@
       </turbo-frame>
     <% end %>
 
-    <% Provider::Registry.oauth_provider_keys.each do |key| %>
-      <% adapter = Provider::Registry.oauth_provider_adapter(key) %>
+    <% Provider::ConnectionRegistry.keys.each do |key| %>
+      <% adapter = Provider::ConnectionRegistry.adapter_for(key) %>
       <% title = adapter.display_name + (adapter.beta? ? " (beta)" : "") %>
       <%= settings_section title: title, collapsible: true, open: false do %>
         <turbo-frame id="<%= key %>-providers-panel">

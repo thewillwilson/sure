@@ -1,7 +1,23 @@
+# OAuth2 grant lifecycle for a Provider::Connection.
+#
+# The public surface splits into two categories — callers should know which
+# side of the line they're on:
+#
+#   READ-ONLY (build URLs, return strings; never write to @connection):
+#     authorize_url, reauth_url
+#
+#   MUTATING (persist new tokens / status to @connection.credentials):
+#     exchange_code, fresh_access_token (via refresh!), store_tokens
+#
+# Methods below the "Mutators" header all call @connection.update! and may
+# transition status to :requires_update on consent revocation. fresh_access_token
+# is a read in the happy path but mutates if the access_token is expired.
 class Provider::Auth::OAuth2
   def initialize(connection)
     @connection = connection
   end
+
+  # ---- Read-only ---------------------------------------------------------
 
   def authorize_url(redirect_uri:, state:)
     adapter_config.authorize_url(
@@ -13,6 +29,17 @@ class Provider::Auth::OAuth2
     )
   end
 
+  def reauth_url(state:)
+    adapter = Provider::ConnectionRegistry.adapter_for(@connection.provider_key)
+    if adapter.respond_to?(:reauth_url)
+      adapter.reauth_url(@connection, redirect_uri: persisted_redirect_uri, state: state)
+    else
+      authorize_url(redirect_uri: persisted_redirect_uri, state: state)
+    end
+  end
+
+  # ---- Mutators ----------------------------------------------------------
+
   # redirect_uri is persisted on @connection.metadata at first authorize and
   # MUST exactly match that value on token exchange — provider OAuth servers
   # reject the exchange otherwise (e.g., "invalid_grant").
@@ -22,15 +49,8 @@ class Provider::Auth::OAuth2
     store_tokens(tokens, consent_expires_at: consent_expiry)
   end
 
-  def reauth_url(state:)
-    adapter = Provider::Registry.oauth_provider_adapter(@connection.provider_key)
-    if adapter.respond_to?(:reauth_url)
-      adapter.reauth_url(@connection, redirect_uri: persisted_redirect_uri, state: state)
-    else
-      authorize_url(redirect_uri: persisted_redirect_uri, state: state)
-    end
-  end
-
+  # Returns the current access_token. Refreshes (and mutates @connection)
+  # transparently if the stored token has expired.
   def fresh_access_token
     refresh! if expired?
     @connection.credentials["access_token"]
@@ -97,6 +117,6 @@ class Provider::Auth::OAuth2
     end
 
     def adapter_config
-      Provider::Registry.oauth_config_for(@connection.provider_key)
+      Provider::ConnectionRegistry.config_for(@connection.provider_key)
     end
 end

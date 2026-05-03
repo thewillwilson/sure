@@ -45,7 +45,7 @@ class Provider::Connection < ApplicationRecord
     # Provider::Connection is shared across providers, so we dispatch by provider_key
     # via the registry rather than a hardcoded case statement.
     def syncer
-      Provider::Registry.syncer_class_for(provider_key).new(self)
+      Provider::ConnectionRegistry.syncer_class_for(provider_key).new(self)
     end
 
     def sync_broadcaster

@@ -36,8 +36,8 @@ class AccountsController < ApplicationController
       adapter_class.connection_configs(family: family)
     end
 
-    @provider_configs += Provider::Registry.oauth_provider_keys.flat_map do |key|
-      Provider::Registry.oauth_provider_adapter(key).connection_configs(family: family)
+    @provider_configs += Provider::ConnectionRegistry.keys.flat_map do |key|
+      Provider::ConnectionRegistry.adapter_for(key).connection_configs(family: family)
     end
   end
 
@@ -192,8 +192,8 @@ class AccountsController < ApplicationController
       family: family
     )
 
-    provider_configs += Provider::Registry.oauth_provider_keys.flat_map do |key|
-      adapter = Provider::Registry.oauth_provider_adapter(key)
+    provider_configs += Provider::ConnectionRegistry.keys.flat_map do |key|
+      adapter = Provider::ConnectionRegistry.adapter_for(key)
       next [] unless adapter.supported_account_types.include?(account_type_name)
       adapter.connection_configs(family: family)
     end

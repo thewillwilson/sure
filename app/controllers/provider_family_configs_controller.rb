@@ -9,7 +9,7 @@ class ProviderFamilyConfigsController < ApplicationController
   def create
     @config = Current.family.provider_family_configs.build(config_params)
     if @config.save
-      if Provider::Registry.oauth_provider?(@config.provider_key)
+      if Provider::ConnectionRegistry.registered?(@config.provider_key)
         # OAuth start is POST-only; route the user through the select page so they
         # initiate the OAuth flow with an explicit form submission.
         redirect_to select_provider_connections_path(provider: @config.provider_key),

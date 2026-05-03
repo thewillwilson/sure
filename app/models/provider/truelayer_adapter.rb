@@ -1,4 +1,6 @@
 class Provider::TruelayerAdapter
+  extend Provider::ConnectionAdapter
+
   def self.display_name = "TrueLayer"
   def self.description = "UK & European bank connections via open banking."
   def self.brand_color = "#00D64A"
@@ -33,6 +35,24 @@ class Provider::TruelayerAdapter
     } ]
   end
 
+  ACCOUNTABLE_MAP = {
+    "depository" => Depository,
+    "credit"     => CreditCard
+  }.freeze
+
+  def self.build_sure_account(provider_account, family:)
+    accountable_class = ACCOUNTABLE_MAP[provider_account.external_type.to_s] ||
+      raise(Provider::Account::UnsupportedAccountableType,
+            "TruelayerAdapter does not handle external_type=#{provider_account.external_type.inspect}")
+    accountable = accountable_class.new(subtype: provider_account.external_subtype)
+    family.accounts.build(
+      name:        provider_account.external_name,
+      currency:    provider_account.currency,
+      balance:     0,
+      accountable: accountable
+    )
+  end
+
   ACCOUNT_TYPE_MAP = {
     "TRANSACTION"          => "depository",
     "SAVINGS"              => "depository",
@@ -51,7 +71,7 @@ class Provider::TruelayerAdapter
     @connection = connection
   end
 
-  # Called by Provider::Registry.oauth_config_for("truelayer")
+  # Called by Provider::ConnectionRegistry.config_for("truelayer")
   # These stateless methods (authorize_url, scopes, token_client, fetch_consent_expiry) are
   # invoked with connection=nil, so they must not touch @connection.
 
@@ -201,4 +221,4 @@ class Provider::TruelayerAdapter
     end
 end
 
-Provider::Registry.register_oauth_provider("truelayer", Provider::TruelayerAdapter)
+Provider::ConnectionRegistry.register("truelayer", Provider::TruelayerAdapter)

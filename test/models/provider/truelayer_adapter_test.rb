@@ -92,8 +92,8 @@ class Provider::TruelayerAdapterTest < ActiveSupport::TestCase
     assert_in_delta expiry.to_i, result.to_i, 2
   end
 
-  test "Registry.oauth_config_for returns a TruelayerAdapter instance" do
-    adapter = Provider::Registry.oauth_config_for("truelayer")
+  test "ConnectionRegistry.config_for returns a TruelayerAdapter instance" do
+    adapter = Provider::ConnectionRegistry.config_for("truelayer")
     assert_instance_of Provider::TruelayerAdapter, adapter
   end
 

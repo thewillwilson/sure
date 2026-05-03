@@ -60,7 +60,7 @@ class Provider::ConnectionTest < ActiveSupport::TestCase
 
   test "syncer raises NotImplementedError for adapter without syncer_class" do
     stub_adapter = Class.new
-    Provider::Registry.register_oauth_provider("stub_no_syncer", stub_adapter)
+    Provider::ConnectionRegistry.register("stub_no_syncer", stub_adapter)
     conn = Provider::Connection.new(
       family: families(:empty), provider_key: "stub_no_syncer",
       auth_type: "oauth2", credentials: {}, status: :good

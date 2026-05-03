@@ -52,7 +52,7 @@ class Provider::AccountTest < ActiveSupport::TestCase
     error = assert_raises(Provider::Account::UnsupportedAccountableType) do
       @pa.build_sure_account(family: @family)
     end
-    assert_match "ACCOUNTABLE_MAP", error.message
+    assert_match(/external_type=/, error.message)
   end
 
   test "build_sure_account returns an unsaved record" do

@@ -47,8 +47,8 @@ class Settings::BankSyncController < ApplicationController
       }
     ]
 
-    oauth_providers = Provider::Registry.oauth_provider_keys.map do |key|
-      adapter = Provider::Registry.oauth_provider_adapter(key)
+    oauth_providers = Provider::ConnectionRegistry.keys.map do |key|
+      adapter = Provider::ConnectionRegistry.adapter_for(key)
       {
         name:        adapter.display_name,
         description: adapter.respond_to?(:description) ? adapter.description : nil,

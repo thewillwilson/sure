@@ -16,15 +16,6 @@ class Provider::Account < ApplicationRecord
 
   validates :external_id, uniqueness: { scope: :provider_connection_id }
 
-  # When migrating a new adapter onto this framework, extend ACCOUNTABLE_MAP
-  # with the new external_type → Accountable subclass mapping. The fallback
-  # raises rather than silently mis-categorizing (e.g., putting investment
-  # accounts into Depository), which would corrupt financial data.
-  ACCOUNTABLE_MAP = {
-    "depository" => Depository,
-    "credit"     => CreditCard
-  }.freeze
-
   class UnsupportedAccountableType < StandardError; end
 
   def linked? = account_id?
@@ -40,17 +31,13 @@ class Provider::Account < ApplicationRecord
     nil
   end
 
+  # Delegates to the adapter so each provider owns its own external_type →
+  # Accountable mapping (and any per-type customisation, e.g. investments
+  # building Holdings). Adapters raise UnsupportedAccountableType for types
+  # they don't handle, rather than silently mis-categorising.
   def build_sure_account(family:)
-    accountable_class = ACCOUNTABLE_MAP[external_type.to_s] ||
-      raise(UnsupportedAccountableType,
-            "Provider::Account #{id || '(unsaved)'} has external_type=#{external_type.inspect} " \
-            "which is not in ACCOUNTABLE_MAP. Extend the map when adding a new adapter.")
-    accountable = accountable_class.new(subtype: external_subtype)
-    family.accounts.build(
-      name:        external_name,
-      currency:    currency,
-      balance:     0,
-      accountable: accountable
-    )
+    Provider::ConnectionRegistry
+      .adapter_for(provider_connection.provider_key)
+      .build_sure_account(self, family: family)
   end
 end

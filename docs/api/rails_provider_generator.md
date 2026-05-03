@@ -4,12 +4,80 @@ This guide explains how to use the `Provider` generators, which make it easy to 
 integrations with either **global** or **per-family** scope credentials.
 
 ## Table of Contents
-1. [Quick Start](#quick-start)
-2. [Global vs Per-Family: Which to Use?](#global-vs-per-family-which-to-use)
-3. [Provider:Family Generator](#providerfamily-generator)
-4. [Provider:Global Generator](#providerglobal-generator)
-5. [Comparison Table](#comparison-table)
-6. [Examples](#examples)
+1. [Provider System Overview](#provider-system-overview)
+2. [Quick Start](#quick-start)
+3. [Global vs Per-Family: Which to Use?](#global-vs-per-family-which-to-use)
+4. [Provider:Family Generator](#providerfamily-generator)
+5. [Provider:Global Generator](#providerglobal-generator)
+6. [Comparison Table](#comparison-table)
+7. [Examples](#examples)
+
+---
+
+## Provider System Overview
+
+Sure has several provider subsystems that have evolved over time. New work should
+prefer the patterns called out as **preferred** below; the others are documented
+for context because existing adapters still use them.
+
+### 1. `Provider::Base` + `Provider::Factory` (per-account adapter pattern)
+
+The original pattern. Each upstream provider has its own AR model
+(`PlaidAccount`, `SimplefinAccount`, etc.) and an adapter class inheriting
+`Provider::Base`. `Provider::Factory.register("PlaidAccount", Provider::PlaidAdapter)`
+binds them together; `Provider::Factory.create_adapter(provider_account)` is the
+runtime lookup. Adapters use `with_provider_response { ... }` to wrap upstream
+calls in a consistent `Provider::Response` envelope.
+
+Used by: Plaid, SimpleFIN, Lunchflow, Sophtron, Mercury, Coinbase, Binance,
+IndexaCapital, SnapTrade.
+
+### 2. `Provider::Configurable` + `Provider::ConfigurationRegistry`
+
+DSL for declaring provider settings:
+
+```ruby
+configure do
+  field :client_id, secret: true, env_key: "PLAID_CLIENT_ID"
+  field :secret,    secret: true, env_key: "PLAID_SECRET"
+end
+```
+
+Auto-registers in `Provider::ConfigurationRegistry` so the Settings → Providers
+UI can render the form fields. Used alongside the per-account adapter pattern
+above.
+
+### 3. `Provider::Registry` (concept registry)
+
+Stateless registry for cross-cutting concepts: `:exchange_rates`, `:securities`,
+`:llm`. Configured via ENV / `Setting`. Returns SDK instances (e.g.
+`Provider::Registry.get_provider(:openai)`). Different shape from the per-account
+or connection-based patterns — this is "which third-party API serves this concept",
+not "which adapter does this account belong to".
+
+### 4. `Provider::Connection` + `Provider::ConnectionRegistry` (preferred for new OAuth/Link providers)
+
+Newer pattern. One `provider_connections` row per family/institution OAuth or Link
+grant; one `provider_accounts` row per upstream account on that connection. Adapter
+classes register via `Provider::ConnectionRegistry.register("provider_key", AdapterClass)`
+and extend `Provider::ConnectionAdapter` to inherit the contract.
+
+Currently used by: TrueLayer. Plaid migration is in flight.
+
+The contract — see `app/models/provider/connection_adapter.rb`:
+- `display_name`, `supported_account_types`, `syncer_class`, `connection_configs(family:)`,
+  `build_sure_account(provider_account, family:)` (required)
+- `beta?`, `brand_color`, `description`, `reauth_url(...)` (optional, with defaults)
+
+For OAuth2 specifically, `Provider::Auth::OAuth2` handles the grant lifecycle
+(token exchange, refresh, store). Non-OAuth auth backends (e.g. Plaid Link) will
+register sibling classes in `Provider::Auth`.
+
+### Migration intent
+
+Adapters using pattern (1) will be migrated onto pattern (4) over subsequent PRs,
+starting with Plaid. The two systems coexist during migration; `Family::Syncer`
+iterates both `plaid_items` and `provider_connections`.
 
 ---
 
