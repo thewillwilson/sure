@@ -9,9 +9,23 @@
 # codebase. The tables themselves still exist at this point in the migration
 # timeline.
 class MigrateLegacyPlaidToFramework < ActiveRecord::Migration[7.2]
+  # Mirror the original PlaidItem/PlaidAccount encryption_ready? logic. Original
+  # models conditionally apply `encrypts` based on credentials/env presence —
+  # the migration must read columns the same way they were written. Checking
+  # ActiveRecord::Encryption.config.primary_key.present? alone is wrong: Rails
+  # auto-derives a primary key from SECRET_KEY_BASE in some contexts even when
+  # the original models considered themselves unconfigured and wrote plaintext.
+  def self.encryption_ready?
+    creds_ready = Rails.application.credentials.active_record_encryption.present?
+    env_ready = ENV["ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY"].present? &&
+                ENV["ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY"].present? &&
+                ENV["ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"].present?
+    creds_ready || env_ready
+  end
+
   class LegacyPlaidItem < ApplicationRecord
     self.table_name = "plaid_items"
-    if ActiveRecord::Encryption.config.primary_key.present?
+    if MigrateLegacyPlaidToFramework.encryption_ready?
       encrypts :access_token, deterministic: true
       encrypts :raw_payload
       encrypts :raw_institution_payload
@@ -20,7 +34,7 @@ class MigrateLegacyPlaidToFramework < ActiveRecord::Migration[7.2]
 
   class LegacyPlaidAccount < ApplicationRecord
     self.table_name = "plaid_accounts"
-    if ActiveRecord::Encryption.config.primary_key.present?
+    if MigrateLegacyPlaidToFramework.encryption_ready?
       encrypts :raw_payload
       encrypts :raw_transactions_payload
       encrypts :raw_holdings_payload, previous: { attribute: :raw_investments_payload }
