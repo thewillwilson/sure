@@ -96,7 +96,7 @@
       <% title = adapter.display_name + (adapter.beta? ? " (beta)" : "") %>
       <%= settings_section title: title, collapsible: true, open: false do %>
         <turbo-frame id="<%= key %>-providers-panel">
-          <%= render "settings/providers/oauth_provider_panel", provider_key: key %>
+          <%= render "settings/providers/connection_provider_panel", provider_key: key %>
         </turbo-frame>
       <% end %>
     <% end %>

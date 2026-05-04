@@ -16,16 +16,34 @@ class PlaidLinkCallbacksController < ApplicationController
   before_action :validate_region
 
   # GET /provider_connections/plaid/new?region=us
-  # Renders an HTML page that mounts the JS controller; the controller opens
-  # Plaid Link with the link_token and POSTs the resulting public_token to #create.
+  # GET /provider_connections/plaid/new?connection_id=:id   (reauth/update mode)
+  #
+  # Renders an HTML page that mounts the JS controller. New flow: opens Plaid
+  # Link with a fresh link_token and POSTs public_token to #create. Update flow
+  # (when connection_id is present): passes the existing access_token to Plaid
+  # so Link opens in UPDATE mode; on success the JS controller triggers a sync
+  # against the existing Provider::Connection.
   def new
     @region     = region
-    @link_token = Current.family.get_link_token(
-      webhooks_url:     webhooks_url,
-      redirect_url:     create_plaid_link_callbacks_url,
-      accountable_type: params[:accountable_type],
-      region:           region.to_sym
-    )
+    if params[:connection_id].present?
+      @connection = Current.family.provider_connections.find(params[:connection_id])
+      @region = @connection.metadata["region"]
+      @is_update = true
+      @link_token = plaid_client.get_link_token(
+        user_id:          Current.family.id,
+        webhooks_url:     webhooks_url,
+        redirect_url:     create_plaid_link_callbacks_url,
+        access_token:     @connection.credentials["access_token"]
+      ).link_token
+    else
+      @is_update = false
+      @link_token = Current.family.get_link_token(
+        webhooks_url:     webhooks_url,
+        redirect_url:     create_plaid_link_callbacks_url,
+        accountable_type: params[:accountable_type],
+        region:           region.to_sym
+      )
+    end
   end
 
   # POST /provider_connections/plaid/callback
@@ -55,7 +73,12 @@ class PlaidLinkCallbacksController < ApplicationController
   private
 
     def region
-      params[:region].to_s
+      # Update mode reads region from the connection.metadata; new mode reads from params.
+      if params[:connection_id].present?
+        Current.family.provider_connections.find_by(id: params[:connection_id])&.metadata&.[]("region").to_s
+      else
+        params[:region].to_s
+      end
     end
 
     def validate_region

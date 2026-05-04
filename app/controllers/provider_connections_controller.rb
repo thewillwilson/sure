@@ -52,8 +52,15 @@ class ProviderConnectionsController < ApplicationController
   end
 
   def reauth
-    session[:oauth_state] = @connection.id
-    redirect_to @connection.auth.reauth_url(state: @connection.id), allow_other_host: true
+    # Plaid Link reauth opens the JS-driven Link widget in UPDATE mode rather
+    # than redirecting to an OAuth endpoint. Other auth backends use the
+    # adapter's reauth_url (with OAuth's state binding).
+    if @connection.auth_type == "embedded_link"
+      redirect_to new_plaid_link_callbacks_path(connection_id: @connection.id)
+    else
+      session[:oauth_state] = @connection.id
+      redirect_to @connection.auth.reauth_url(state: @connection.id), allow_other_host: true
+    end
   end
 
   def sync

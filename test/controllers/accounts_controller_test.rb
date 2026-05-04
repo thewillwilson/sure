@@ -113,8 +113,16 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "unlinked account can be deleted" do
-    plaid_account = plaid_accounts(:one)
-    AccountProvider.create!(account: @account, provider: plaid_account)
+    # Link via Provider::Connection framework (the post-cutover path)
+    conn = Provider::Connection.create!(
+      family: @account.family, provider_key: "truelayer", auth_type: "oauth2",
+      credentials: {}, status: :good
+    )
+    Provider::Account.create!(
+      provider_connection: conn, account: @account,
+      external_id: "ext-#{SecureRandom.hex(4)}", external_name: "Linked",
+      external_type: "depository", currency: "USD", raw_payload: {}
+    )
     @account.reload
 
     # Cannot delete while linked
@@ -188,8 +196,15 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "select_provider redirects for already linked account" do
-    plaid_account = plaid_accounts(:one)
-    AccountProvider.create!(account: @account, provider: plaid_account)
+    conn = Provider::Connection.create!(
+      family: @account.family, provider_key: "truelayer", auth_type: "oauth2",
+      credentials: {}, status: :good
+    )
+    Provider::Account.create!(
+      provider_connection: conn, account: @account,
+      external_id: "ext-#{SecureRandom.hex(4)}", external_name: "Linked",
+      external_type: "depository", currency: "USD", raw_payload: {}
+    )
 
     get select_provider_account_url(@account)
     assert_redirected_to account_url(@account)

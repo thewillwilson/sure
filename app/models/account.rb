@@ -35,7 +35,7 @@ class Account < ApplicationRecord
       .left_joins(:provider_accounts)
       .where(account_providers: { id: nil })
       .where(provider_accounts: { id: nil })
-      .where(plaid_account_id: nil, simplefin_account_id: nil)
+      .where(simplefin_account_id: nil)
   }
 
   scope :visible_manual, -> {

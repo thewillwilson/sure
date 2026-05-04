@@ -6,6 +6,8 @@
   <%= tag.div data: {
                 controller: "plaid",
                 plaid_link_token_value: @link_token,
-                plaid_region_value: @region
+                plaid_region_value: @region,
+                plaid_is_update_value: @is_update,
+                plaid_connection_id_value: @connection&.id
               } %>
 <% end %>

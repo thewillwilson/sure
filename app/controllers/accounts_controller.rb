@@ -155,8 +155,15 @@ class AccountsController < ApplicationController
         # wasting a slot on reconnect.
         @account.account_providers.destroy_all
 
+        # Remove Provider::Connection-framework link (Plaid, TrueLayer, etc.)
+        # The Provider::Account row is preserved (account_id nullified) so the
+        # connection's setup page shows it as available to relink. Use
+        # update_all to bypass association caches.
+        Provider::Account.where(account_id: @account.id).update_all(account_id: nil)
+        @account.association(:provider_account).reset
+
         # Remove legacy system links (foreign keys)
-        @account.update!(plaid_account_id: nil, simplefin_account_id: nil)
+        @account.update!(simplefin_account_id: nil)
 
         # Destroy the SimplefinAccount record so it doesn't cause stale account issues
         # This is safe because:

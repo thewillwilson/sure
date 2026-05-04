@@ -228,7 +228,7 @@ en:
       enable_banking_panel:
         callback_url_instruction: "For the callback URL, use %{callback_url}."
         connection_error: Connection Error
-      oauth_provider_panel:
+      connection_provider_panel:
         connected:
           one: "Connected (1 connection)"
           other: "Connected (%{count} connections)"
