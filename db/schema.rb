@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_02_153816) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_04_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -55,7 +55,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_02_153816) do
     t.string "currency"
     t.virtual "classification", type: :string, as: "\nCASE\n    WHEN ((accountable_type)::text = ANY (ARRAY[('Loan'::character varying)::text, ('CreditCard'::character varying)::text, ('OtherLiability'::character varying)::text])) THEN 'liability'::text\n    ELSE 'asset'::text\nEND", stored: true
     t.uuid "import_id"
-    t.uuid "plaid_account_id"
     t.decimal "cash_balance", precision: 19, scale: 4, default: "0.0"
     t.jsonb "locked_attributes", default: {}
     t.string "status", default: "active"
@@ -74,7 +73,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_02_153816) do
     t.index [ "family_id" ], name: "index_accounts_on_family_id"
     t.index [ "import_id" ], name: "index_accounts_on_import_id"
     t.index [ "owner_id" ], name: "index_accounts_on_owner_id"
-    t.index [ "plaid_account_id" ], name: "index_accounts_on_plaid_account_id"
     t.index [ "simplefin_account_id" ], name: "index_accounts_on_simplefin_account_id"
     t.index [ "status" ], name: "index_accounts_on_status"
   end
@@ -1081,48 +1079,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_02_153816) do
     t.string "subtype"
   end
 
-  create_table "plaid_accounts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "plaid_item_id", null: false
-    t.string "plaid_id", null: false
-    t.string "plaid_type", null: false
-    t.string "plaid_subtype"
-    t.decimal "current_balance", precision: 19, scale: 4
-    t.decimal "available_balance", precision: 19, scale: 4
-    t.string "currency", null: false
-    t.string "name", null: false
-    t.string "mask"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.jsonb "raw_payload", default: {}
-    t.jsonb "raw_transactions_payload", default: {}
-    t.jsonb "raw_holdings_payload", default: {}
-    t.jsonb "raw_liabilities_payload", default: {}
-    t.index [ "plaid_item_id", "plaid_id" ], name: "index_plaid_accounts_on_item_and_plaid_id", unique: true
-    t.index [ "plaid_item_id" ], name: "index_plaid_accounts_on_plaid_item_id"
-  end
-
-  create_table "plaid_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "family_id", null: false
-    t.string "access_token"
-    t.string "plaid_id", null: false
-    t.string "name"
-    t.string "next_cursor"
-    t.boolean "scheduled_for_deletion", default: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "available_products", default: [], array: true
-    t.string "billed_products", default: [], array: true
-    t.string "plaid_region", default: "us", null: false
-    t.string "institution_url"
-    t.string "institution_id"
-    t.string "institution_color"
-    t.string "status", default: "good", null: false
-    t.jsonb "raw_payload", default: {}
-    t.jsonb "raw_institution_payload", default: {}
-    t.index [ "family_id" ], name: "index_plaid_items_on_family_id"
-    t.index [ "plaid_id" ], name: "index_plaid_items_on_plaid_id", unique: true
-  end
-
   create_table "properties", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -1148,6 +1104,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_02_153816) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "skipped", default: false, null: false
+    t.jsonb "raw_transactions_payload"
     t.index [ "account_id" ], name: "index_provider_accounts_on_account_id"
     t.index [ "provider_connection_id", "external_id" ], name: "index_provider_accounts_on_connection_and_external_id", unique: true
     t.index [ "provider_connection_id" ], name: "index_provider_accounts_on_provider_connection_id"
@@ -1724,7 +1681,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_02_153816) do
   add_foreign_key "account_shares", "users"
   add_foreign_key "accounts", "families"
   add_foreign_key "accounts", "imports"
-  add_foreign_key "accounts", "plaid_accounts"
   add_foreign_key "accounts", "simplefin_accounts"
   add_foreign_key "accounts", "users", column: "owner_id", on_delete: :nullify
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -1779,8 +1735,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_02_153816) do
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_access_tokens", "oauth_applications", column: "application_id"
   add_foreign_key "oidc_identities", "users"
-  add_foreign_key "plaid_accounts", "plaid_items"
-  add_foreign_key "plaid_items", "families"
   add_foreign_key "provider_accounts", "accounts", on_delete: :nullify
   add_foreign_key "provider_accounts", "provider_connections"
   add_foreign_key "provider_connections", "families"

@@ -3,14 +3,14 @@ class Provider::Factory
 
   class << self
     # Register a provider adapter
-    # @param provider_type [String] The provider account class name (e.g., "PlaidAccount")
-    # @param adapter_class [Class] The adapter class (e.g., Provider::PlaidAdapter)
+    # @param provider_type [String] The provider account class name (e.g., "SimplefinAccount")
+    # @param adapter_class [Class] The adapter class (e.g., Provider::SimplefinAdapter)
     def register(provider_type, adapter_class)
       registry[provider_type] = adapter_class
     end
 
     # Creates an adapter for a given provider account
-    # @param provider_account [PlaidAccount, SimplefinAccount] The provider-specific account
+    # @param provider_account [SimplefinAccount, LunchflowAccount] The provider-specific account
     # @param account [Account] Optional account reference
     # @return [Provider::Base] An adapter instance
     def create_adapter(provider_account, account: nil)
