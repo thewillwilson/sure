@@ -19,7 +19,14 @@ class Provider::Connection < ApplicationRecord
 
   scope :syncable, -> { good.or(requires_update) }
 
+  # Known auth backends. Each Provider::Auth::* class corresponds to one entry.
+  # Adding a new auth protocol means adding a class under Provider::Auth and
+  # extending this list. Defense in depth — adapter contracts already enforce
+  # auth_class selection, but a typo or stale row shouldn't be silently accepted.
+  AUTH_TYPES = %w[oauth2 embedded_link].freeze
+
   validates :provider_key, :auth_type, presence: true
+  validates :auth_type, inclusion: { in: AUTH_TYPES }, if: :auth_type?
 
   def institution_name
     provider_accounts.first&.raw_payload&.dig("provider", "display_name")&.titleize.presence ||

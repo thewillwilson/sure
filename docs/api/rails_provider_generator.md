@@ -55,29 +55,61 @@ Stateless registry for cross-cutting concepts: `:exchange_rates`, `:securities`,
 or connection-based patterns — this is "which third-party API serves this concept",
 not "which adapter does this account belong to".
 
-### 4. `Provider::Connection` + `Provider::ConnectionRegistry` (preferred for new OAuth/Link providers)
+### 4. `Provider::Connection` + `Provider::ConnectionRegistry` (preferred — adopt this for new providers)
 
-Newer pattern. One `provider_connections` row per family/institution OAuth or Link
-grant; one `provider_accounts` row per upstream account on that connection. Adapter
-classes register via `Provider::ConnectionRegistry.register("provider_key", AdapterClass)`
-and extend `Provider::ConnectionAdapter` to inherit the contract.
+The current pattern. One `provider_connections` row per family/institution
+grant; one `provider_accounts` row per upstream account on that connection.
+Adapter classes register via
+`Provider::ConnectionRegistry.register("provider_key", AdapterClass)` and
+extend `Provider::ConnectionAdapter` to inherit the contract.
 
-Currently used by: TrueLayer. Plaid migration is in flight.
+Currently used by: TrueLayer (OAuth2), Plaid (EmbeddedLink — Plaid Link).
 
 The contract — see `app/models/provider/connection_adapter.rb`:
-- `display_name`, `supported_account_types`, `syncer_class`, `connection_configs(family:)`,
-  `build_sure_account(provider_account, family:)` (required)
+- `display_name`, `supported_account_types`, `syncer_class`, `auth_class`,
+  `connection_configs(family:)`, `build_sure_account(provider_account, family:)` (required)
+- `webhook_handler_class`, `verify_webhook!(headers:, raw_body:)` (required for adapters that accept webhooks)
 - `beta?`, `brand_color`, `description`, `reauth_url(...)` (optional, with defaults)
 
-For OAuth2 specifically, `Provider::Auth::OAuth2` handles the grant lifecycle
-(token exchange, refresh, store). Non-OAuth auth backends (e.g. Plaid Link) will
-register sibling classes in `Provider::Auth`.
+#### Auth backends — `Provider::Auth::*`
 
-### Migration intent
+The framework supports any auth protocol that fits the
+`auth.fresh_access_token` / `auth.store_*` interface. Add a new class under
+`Provider::Auth` and reference it from your adapter's `auth_class`.
 
-Adapters using pattern (1) will be migrated onto pattern (4) over subsequent PRs,
-starting with Plaid. The two systems coexist during migration; `Family::Syncer`
-iterates both `plaid_items` and `provider_connections`.
+Existing:
+- `Provider::Auth::OAuth2` — redirect-grant flow. Used by TrueLayer.
+- `Provider::Auth::EmbeddedLink` — vendor-hosted modal returning an opaque
+  public_token (Plaid Link, MX Connect Widget, Yodlee FastLink, Akoya Connect).
+
+Cross-request flow state (state nonce, redirect_uri, link_token, etc.) lives
+in `session[:provider_flows][flow_id]` — the controller stashes it at flow
+start and consumes it at completion. See `ProviderAuthFlowSession` concern.
+The connection itself is created at flow completion when valid credentials
+exist, never as a "pending" placeholder.
+
+#### Webhooks
+
+Generic entry point: `POST /webhooks/providers/:provider_key`. Routes to
+`Webhooks::ProviderController#receive`, which calls `adapter.verify_webhook!`
+followed by `adapter.webhook_handler_class.new(...).process`.
+
+#### Plaid-specific deployment notes
+
+- **Redirect URI whitelisting**: Plaid OAuth-bank flows (Chase, Wells Fargo,
+  BofA, etc.) require the redirect URL be registered in the Plaid Dashboard
+  under the relevant environment. The current redirect target is
+  `https://<your-host>/provider_connections/plaid/resume` (the query string
+  varies per flow but Plaid matches host+path). Register it once per env
+  (sandbox + production).
+- **Webhook URL**: register `https://<your-host>/webhooks/providers/plaid_us`
+  (and `/plaid_eu` for the EU region) in the Plaid Dashboard. The
+  webhooks_url passed at link_token creation must match.
+- **Region split**: Plaid US and Plaid EU are distinct Plaid accounts with
+  different credentials, country codes, and webhook URLs. They register
+  twice under `plaid_us` and `plaid_eu` keys, both pointing at the same
+  `Provider::Plaid::Adapter` class. Region is stored on
+  `connection.metadata["region"]`.
 
 ---
 

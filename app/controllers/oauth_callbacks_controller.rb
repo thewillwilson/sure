@@ -1,13 +1,7 @@
 class OauthCallbacksController < ApplicationController
-  before_action :require_admin!
+  include ProviderAuthFlowSession
 
-  # Session-bridged auth flow:
-  #
-  # No pending Provider::Connection is created at flow start. All cross-request
-  # state lives in session[:provider_flows][flow_id] until the callback succeeds,
-  # at which point a single Provider::Connection is created with valid tokens.
-  # Failed/abandoned flows leave no DB residue.
-  FLOW_TTL = 1.hour
+  before_action :require_admin!
 
   # POST /connect/:provider — initiates OAuth (mutates state, must not be GET).
   def new
@@ -88,24 +82,6 @@ class OauthCallbacksController < ApplicationController
   end
 
   private
-
-    def write_flow!(flow_id, state)
-      session[:provider_flows] ||= {}
-      # Drop any flows older than FLOW_TTL on each write — keeps the session small.
-      cutoff = FLOW_TTL.seconds.ago.to_i
-      pruned = session[:provider_flows].reject { |_, v| (v.is_a?(Hash) ? v["created_at"].to_i : 0) < cutoff }
-      session[:provider_flows] = pruned.merge(flow_id => state)
-    end
-
-    def consume_flow(flow_id)
-      return nil if flow_id.blank?
-      flows = session[:provider_flows] || {}
-      flow = flows[flow_id]
-      return nil unless flow.is_a?(Hash)
-      return nil if flow["created_at"].to_i < FLOW_TTL.seconds.ago.to_i
-      session[:provider_flows] = flows.except(flow_id)
-      flow
-    end
 
     def sandbox_for(config)
       # TrueLayer puts a `sandbox` flag on FamilyConfig.credentials. Defaults to

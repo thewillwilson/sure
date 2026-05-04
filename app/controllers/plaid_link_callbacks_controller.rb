@@ -26,9 +26,9 @@
 # is created with the existing access_token; on success JS triggers a sync rather
 # than POSTing a new public_token.
 class PlaidLinkCallbacksController < ApplicationController
-  before_action :require_admin!
+  include ProviderAuthFlowSession
 
-  FLOW_TTL = 1.hour
+  before_action :require_admin!
 
   def new
     if params[:connection_id].present?
@@ -152,28 +152,6 @@ class PlaidLinkCallbacksController < ApplicationController
       @is_resume  = false
     end
 
-    def write_flow!(flow_id, state)
-      session[:provider_flows] ||= {}
-      cutoff = FLOW_TTL.seconds.ago.to_i
-      pruned = session[:provider_flows].reject { |_, v| (v.is_a?(Hash) ? v["created_at"].to_i : 0) < cutoff }
-      session[:provider_flows] = pruned.merge(flow_id => state)
-    end
-
-    def peek_flow(flow_id)
-      return nil if flow_id.blank?
-      flow = session[:provider_flows]&.dig(flow_id)
-      return nil unless flow.is_a?(Hash)
-      return nil if flow["created_at"].to_i < FLOW_TTL.seconds.ago.to_i
-      flow
-    end
-
-    def consume_flow(flow_id)
-      flow = peek_flow(flow_id)
-      return nil unless flow
-      session[:provider_flows] = (session[:provider_flows] || {}).except(flow_id)
-      flow
-    end
-
     def plaid_client(region)
       Provider::Registry.plaid_provider_for_region(region.to_sym)
     end
@@ -181,7 +159,6 @@ class PlaidLinkCallbacksController < ApplicationController
     def webhooks_url(region)
       # Generic provider-webhooks endpoint. The legacy /webhooks/plaid endpoint
       # was removed in the cutover.
-      url_for(controller: "webhooks/provider", action: "receive",
-              provider_key: "plaid_#{region}", only_path: false)
+      webhooks_provider_url(provider_key: "plaid_#{region}")
     end
 end
