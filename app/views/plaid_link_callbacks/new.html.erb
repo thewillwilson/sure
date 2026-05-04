@@ -1,15 +1,20 @@
 <%# Mounts the Plaid JS controller. flow_id ties this render to the session
-    state stashed in #new or #resume, and the JS posts back to
-    /provider_connections/plaid/callback with that flow_id so the server can
-    consume the right flow record. %>
+    state stashed in #new or #resume; the JS posts back to /provider_connections/plaid/callback
+    with that flow_id so the server can consume the right flow record.
+
+    The visible content is a brief loading state — Plaid Link's modal opens on
+    top of this once the SDK loads (usually < 1s). On OAuth-bank resume the
+    user lands here from Chase/etc. and sees this until JS reopens the modal. %>
 <%= turbo_frame_tag "modal" do %>
-  <%= tag.div data: {
-                controller: "plaid",
-                plaid_link_token_value: @link_token,
-                plaid_region_value: @region,
-                plaid_is_update_value: @is_update,
-                plaid_is_resume_value: @is_resume,
-                plaid_flow_id_value: @flow_id,
-                plaid_connection_id_value: @connection&.id
-              } %>
+  <div data-controller="plaid"
+       data-plaid-link-token-value="<%= @link_token %>"
+       data-plaid-region-value="<%= @region %>"
+       data-plaid-is-update-value="<%= @is_update %>"
+       data-plaid-is-resume-value="<%= @is_resume %>"
+       data-plaid-flow-id-value="<%= @flow_id %>"
+       data-plaid-connection-id-value="<%= @connection&.id %>"
+       class="flex flex-col items-center justify-center py-12 gap-3">
+    <%= icon("loader", class: "w-6 h-6 text-secondary animate-spin") %>
+    <p class="text-sm text-secondary"><%= t(".connecting") %></p>
+  </div>
 <% end %>
