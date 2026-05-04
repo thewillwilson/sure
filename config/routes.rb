@@ -5,6 +5,12 @@ Rails.application.routes.draw do
   post "connect/:provider",         to: "oauth_callbacks#new",    as: :new_oauth_callbacks
   get "connect/:provider/callback", to: "oauth_callbacks#create", as: :create_oauth_callbacks
 
+  # Plaid Link is not OAuth2 — distinct controller. #new renders an HTML page
+  # that mounts the JS controller with a server-fetched link_token. #create
+  # accepts the public_token after the user completes the embedded Link widget.
+  get  "provider_connections/plaid/new",      to: "plaid_link_callbacks#new",    as: :new_plaid_link_callbacks
+  post "provider_connections/plaid/callback", to: "plaid_link_callbacks#create", as: :create_plaid_link_callbacks
+
   resources :provider_family_configs, only: [ :new, :create, :edit, :update, :destroy ]
   resources :provider_connections, only: [ :show, :destroy ] do
     collection do

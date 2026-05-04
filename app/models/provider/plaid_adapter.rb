@@ -22,56 +22,14 @@ class Provider::PlaidAdapter < Provider::Base
     %w[Depository CreditCard Loan Investment]
   end
 
-  # Returns connection configurations for this provider
-  # Plaid can return multiple configs (US and EU) depending on family setup
+  # Returns []: this legacy adapter no longer contributes Plaid entries to
+  # the bank-sync directory. The new Provider::Plaid::Adapter (registered
+  # with Provider::ConnectionRegistry) provides them. The Provider::Factory
+  # registration above stays so existing PlaidItem rows continue syncing
+  # via the legacy per-account adapter path during cutover; this is purely
+  # about which entries appear under Add Account.
   def self.connection_configs(family:)
-    configs = []
-
-    # US configuration
-    if family.can_connect_plaid_us?
-      configs << {
-        key: "plaid_us",
-        name: "Plaid",
-        description: "Connect to your US bank via Plaid",
-        can_connect: true,
-        new_account_path: ->(accountable_type, return_to) {
-          Rails.application.routes.url_helpers.new_plaid_item_path(
-            region: "us",
-            accountable_type: accountable_type
-          )
-        },
-        existing_account_path: ->(account_id) {
-          Rails.application.routes.url_helpers.select_existing_account_plaid_items_path(
-            account_id: account_id,
-            region: "us"
-          )
-        }
-      }
-    end
-
-    # EU configuration
-    if family.can_connect_plaid_eu?
-      configs << {
-        key: "plaid_eu",
-        name: "Plaid (EU)",
-        description: "Connect to your EU bank via Plaid",
-        can_connect: true,
-        new_account_path: ->(accountable_type, return_to) {
-          Rails.application.routes.url_helpers.new_plaid_item_path(
-            region: "eu",
-            accountable_type: accountable_type
-          )
-        },
-        existing_account_path: ->(account_id) {
-          Rails.application.routes.url_helpers.select_existing_account_plaid_items_path(
-            account_id: account_id,
-            region: "eu"
-          )
-        }
-      }
-    end
-
-    configs
+    []
   end
 
   # Mutex for thread-safe configuration loading

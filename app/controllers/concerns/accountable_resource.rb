@@ -85,11 +85,12 @@ module AccountableResource
         family: Current.family
       )
 
-      @provider_configs += Provider::ConnectionRegistry.keys.flat_map do |key|
-        adapter = Provider::ConnectionRegistry.adapter_for(key)
-        next [] unless adapter.supported_account_types.include?(account_type_name)
-        adapter.connection_configs(family: Current.family)
-      end
+      eligible_keys = Provider::ConnectionRegistry.keys.select { |key|
+        Provider::ConnectionRegistry.adapter_for(key).supported_account_types.include?(account_type_name)
+      }
+      @provider_configs += eligible_keys
+        .flat_map { |key| Provider::ConnectionRegistry.adapter_for(key).connection_configs(family: Current.family) }
+        .uniq { |c| c[:key] }
     end
 
     def accountable_type

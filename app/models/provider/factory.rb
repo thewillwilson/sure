@@ -120,15 +120,23 @@ class Provider::Factory
         registry[provider_type]
       end
 
-      # Discover all adapter files in the provider directory
-      # Returns adapter class names (e.g., ["PlaidAdapter", "SimplefinAdapter"])
+      # Discover all adapter files in the provider directory.
+      # Matches two layouts:
+      #   - flat:   app/models/provider/<name>_adapter.rb          → "<Name>Adapter"
+      #   - nested: app/models/provider/<name>/adapter.rb          → "<Name>::Adapter"
+      # Both forms register themselves at file-load time, so we eager-load them
+      # by name to trigger registration with Provider::Factory and/or
+      # Provider::ConnectionRegistry.
       def adapter_files
         return [] unless defined?(Rails)
 
-        pattern = Rails.root.join("app/models/provider/*_adapter.rb")
-        Dir[pattern].map do |file|
+        flat   = Dir[Rails.root.join("app/models/provider/*_adapter.rb")].map do |file|
           File.basename(file, ".rb").camelize
         end
+        nested = Dir[Rails.root.join("app/models/provider/*/adapter.rb")].map do |file|
+          "#{File.basename(File.dirname(file)).camelize}::Adapter"
+        end
+        flat + nested
       end
   end
 end

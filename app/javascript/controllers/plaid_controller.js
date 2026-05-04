@@ -7,6 +7,10 @@ export default class extends Controller {
     region: { type: String, default: "us" },
     isUpdate: { type: Boolean, default: false },
     itemId: String,
+    // When true, public_token is exchanged via the new Provider::Connection
+    // framework endpoint. False (default) preserves the legacy flow for
+    // existing PlaidItem reauths during cutover.
+    framework: { type: Boolean, default: false },
   };
 
   connect() {
@@ -106,7 +110,27 @@ export default class extends Controller {
       return;
     }
 
-    // For new connections, create a new Plaid item
+    if (this.frameworkValue) {
+      // New Provider::Connection framework path
+      fetch("/provider_connections/plaid/callback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": document.querySelector('[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({
+          public_token: public_token,
+          region: this.regionValue,
+        }),
+      }).then((response) => {
+        if (response.redirected) {
+          window.location.href = response.url;
+        }
+      });
+      return;
+    }
+
+    // Legacy: create a PlaidItem via the per-account-adapter path.
     fetch("/plaid_items", {
       method: "POST",
       headers: {

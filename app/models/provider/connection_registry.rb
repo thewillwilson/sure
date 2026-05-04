@@ -36,6 +36,17 @@ module Provider::ConnectionRegistry
       adapter_for(key).new(nil)
     end
 
+    # Aggregates connection_configs across every registered adapter, deduping
+    # by config key. Adapters registered under multiple keys (e.g. plaid_us +
+    # plaid_eu pointing at the same adapter class) get their connection_configs
+    # called once per registration; this collapses duplicates so the bank-sync
+    # directory shows each entry once.
+    def all_connection_configs(family:)
+      keys
+        .flat_map { |key| adapter_for(key).connection_configs(family: family) }
+        .uniq { |config| config[:key] }
+    end
+
     private
 
       def registry

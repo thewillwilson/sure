@@ -36,9 +36,7 @@ class AccountsController < ApplicationController
       adapter_class.connection_configs(family: family)
     end
 
-    @provider_configs += Provider::ConnectionRegistry.keys.flat_map do |key|
-      Provider::ConnectionRegistry.adapter_for(key).connection_configs(family: family)
-    end
+    @provider_configs += Provider::ConnectionRegistry.all_connection_configs(family: family)
   end
 
   def sync_all
@@ -192,11 +190,12 @@ class AccountsController < ApplicationController
       family: family
     )
 
-    provider_configs += Provider::ConnectionRegistry.keys.flat_map do |key|
-      adapter = Provider::ConnectionRegistry.adapter_for(key)
-      next [] unless adapter.supported_account_types.include?(account_type_name)
-      adapter.connection_configs(family: family)
-    end
+    eligible_keys = Provider::ConnectionRegistry.keys.select { |key|
+      Provider::ConnectionRegistry.adapter_for(key).supported_account_types.include?(account_type_name)
+    }
+    provider_configs += eligible_keys
+      .flat_map { |key| Provider::ConnectionRegistry.adapter_for(key).connection_configs(family: family) }
+      .uniq { |c| c[:key] }
 
     # Build available providers list with paths resolved for this specific account
     # Filter out providers that don't support linking to existing accounts
