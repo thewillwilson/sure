@@ -49,6 +49,16 @@ class MigrateLegacyPlaidToFramework < ActiveRecord::Migration[7.2]
     say_with_time "Migrating #{items.size} PlaidItem(s) to Provider::Connection" do
       items.each { |item| migrate_item(item) }
     end
+
+    # The legacy polymorphic AccountProvider rows of provider_type='PlaidAccount'
+    # are now stale: their provider_id targets are about to be dropped with
+    # plaid_accounts (next migration), and the new Provider::Account.account_id
+    # linkage replaces them. Delete here so views don't try to instantiate
+    # adapters against a dropped class.
+    deleted = ActiveRecord::Base.connection.delete(
+      "DELETE FROM account_providers WHERE provider_type = 'PlaidAccount'"
+    )
+    say "Removed #{deleted} stale PlaidAccount AccountProvider row(s)" if deleted.positive?
   end
 
   def down
