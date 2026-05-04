@@ -129,13 +129,11 @@ class Provider::ConnectionTest < ActiveSupport::TestCase
     family = families(:empty)
     good          = Provider::Connection.create!(family: family, provider_key: "truelayer", auth_type: "oauth2", credentials: {}, status: :good)
     req_update    = Provider::Connection.create!(family: family, provider_key: "truelayer", auth_type: "oauth2", credentials: {}, status: :requires_update)
-    pend          = Provider::Connection.create!(family: family, provider_key: "truelayer", auth_type: "oauth2", credentials: {}, status: :pending)
     disconnected  = Provider::Connection.create!(family: family, provider_key: "truelayer", auth_type: "oauth2", credentials: {}, status: :disconnected)
 
     ids = Provider::Connection.syncable.pluck(:id)
     assert_includes ids, good.id
     assert_includes ids, req_update.id
-    assert_not_includes ids, pend.id
     assert_not_includes ids, disconnected.id
   end
 end

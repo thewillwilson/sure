@@ -8,7 +8,7 @@ class Provider::Auth::EmbeddedLinkTest < ActiveSupport::TestCase
       auth_type:    "embedded_link",
       credentials:  {},
       metadata:     { "region" => "us" },
-      status:       :pending
+      status:       :good
     )
     @auth = Provider::Auth::EmbeddedLink.new(@connection)
   end

@@ -20,7 +20,7 @@ class AccountsController < ApplicationController
     @snaptrade_items = visible_provider_items(family.snaptrade_items.ordered.includes(:syncs, :snaptrade_accounts))
     @indexa_capital_items = visible_provider_items(family.indexa_capital_items.ordered.includes(:syncs, :indexa_capital_accounts))
     @sophtron_items = visible_provider_items(family.sophtron_items.ordered.includes(:syncs, :sophtron_accounts))
-    @provider_connections = family.provider_connections.where.not(status: :pending).order(:created_at).includes(provider_accounts: :account)
+    @provider_connections = family.provider_connections.order(:created_at).includes(provider_accounts: :account)
 
     # Build sync stats maps for all providers
     build_sync_stats_maps

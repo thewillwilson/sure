@@ -8,7 +8,10 @@ Rails.application.routes.draw do
   # Plaid Link is not OAuth2 — distinct controller. #new renders an HTML page
   # that mounts the JS controller with a server-fetched link_token. #create
   # accepts the public_token after the user completes the embedded Link widget.
+  # #resume handles Plaid OAuth-institution redirects (e.g. Chase) where the
+  # browser leaves the page mid-flow and lands back here with ?oauth_state_id=...
   get  "provider_connections/plaid/new",      to: "plaid_link_callbacks#new",    as: :new_plaid_link_callbacks
+  get  "provider_connections/plaid/resume",   to: "plaid_link_callbacks#resume", as: :resume_plaid_link_callbacks
   post "provider_connections/plaid/callback", to: "plaid_link_callbacks#create", as: :create_plaid_link_callbacks
 
   resources :provider_family_configs, only: [ :new, :create, :edit, :update, :destroy ]

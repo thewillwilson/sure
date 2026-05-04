@@ -12,7 +12,10 @@ class Provider::Connection < ApplicationRecord
     encrypts :credentials
   end
 
-  enum :status, { pending: "pending", good: "good", requires_update: "requires_update", disconnected: "disconnected" }
+  # Connections only exist when credentials are real — auth flows persist their
+  # cross-request state in session (see OauthCallbacksController and
+  # PlaidLinkCallbacksController), not in a pending DB row.
+  enum :status, { good: "good", requires_update: "requires_update", disconnected: "disconnected" }
 
   scope :syncable, -> { good.or(requires_update) }
 

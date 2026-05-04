@@ -1,13 +1,15 @@
-<%# Mounts the Plaid JS controller in framework mode — onSuccess POSTs the
-    public_token to /provider_connections/plaid/callback (this controller#create)
-    rather than the legacy /plaid_items endpoint. Wrapped in the modal turbo
-    frame so closing Plaid Link returns the user to wherever they came from. %>
+<%# Mounts the Plaid JS controller. flow_id ties this render to the session
+    state stashed in #new or #resume, and the JS posts back to
+    /provider_connections/plaid/callback with that flow_id so the server can
+    consume the right flow record. %>
 <%= turbo_frame_tag "modal" do %>
   <%= tag.div data: {
                 controller: "plaid",
                 plaid_link_token_value: @link_token,
                 plaid_region_value: @region,
                 plaid_is_update_value: @is_update,
+                plaid_is_resume_value: @is_resume,
+                plaid_flow_id_value: @flow_id,
                 plaid_connection_id_value: @connection&.id
               } %>
 <% end %>

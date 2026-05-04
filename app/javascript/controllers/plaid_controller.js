@@ -6,7 +6,9 @@ export default class extends Controller {
     linkToken: String,
     region: { type: String, default: "us" },
     isUpdate: { type: Boolean, default: false },
+    isResume: { type: Boolean, default: false },
     connectionId: String,
+    flowId: String,
   };
 
   connect() {
@@ -78,14 +80,22 @@ export default class extends Controller {
     await this.waitForPlaid();
     if (connectionToken !== this._connectionToken) return;
 
-    this._handler = Plaid.create({
+    const config = {
       token: this.linkTokenValue,
       onSuccess: this.handleSuccess,
       onLoad: this.handleLoad,
       onExit: this.handleExit,
       onEvent: this.handleEvent,
-    });
+    };
 
+    // OAuth-bank resume: Plaid landed the browser back at /provider_connections/plaid/resume
+    // with ?oauth_state_id=...; passing receivedRedirectUri tells Plaid Link
+    // to resume the in-progress session rather than starting a new one.
+    if (this.isResumeValue) {
+      config.receivedRedirectUri = window.location.href;
+    }
+
+    this._handler = Plaid.create(config);
     this._handler.open();
   }
 
@@ -113,7 +123,7 @@ export default class extends Controller {
       },
       body: JSON.stringify({
         public_token: public_token,
-        region: this.regionValue,
+        flow_id: this.flowIdValue,
       }),
     }).then((response) => {
       if (response.redirected) {
