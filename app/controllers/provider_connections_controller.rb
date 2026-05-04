@@ -1,4 +1,6 @@
 class ProviderConnectionsController < ApplicationController
+  include ProviderAuthFlowSession
+
   before_action :require_admin!
   before_action :set_connection, except: [ :select, :link, :skip ]
 
@@ -53,13 +55,23 @@ class ProviderConnectionsController < ApplicationController
 
   def reauth
     # Plaid Link reauth opens the JS-driven Link widget in UPDATE mode rather
-    # than redirecting to an OAuth endpoint. Other auth backends use the
-    # adapter's reauth_url (with OAuth's state binding).
+    # than redirecting to an OAuth endpoint. Other auth backends write a
+    # reauth flow record into the same session map the OAuth callback consumes,
+    # so the callback knows to update an existing connection rather than create
+    # a new one.
     if @connection.auth_type == "embedded_link"
-      redirect_to new_plaid_link_callbacks_path(connection_id: @connection.id)
+      redirect_to new_embedded_link_callbacks_path(provider_key: @connection.provider_key,
+                                                    connection_id: @connection.id)
     else
-      session[:oauth_state] = @connection.id
-      redirect_to @connection.auth.reauth_url(state: @connection.id), allow_other_host: true
+      flow_id = SecureRandom.hex(16)
+      write_flow!(flow_id, {
+        "kind"          => "reauth",
+        "connection_id" => @connection.id,
+        "provider_key"  => @connection.provider_key,
+        "redirect_uri"  => @connection.metadata["redirect_uri"],
+        "created_at"    => Time.current.to_i
+      })
+      redirect_to @connection.auth.reauth_url(state: flow_id), allow_other_host: true
     end
   end
 

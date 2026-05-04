@@ -5,14 +5,14 @@ Rails.application.routes.draw do
   post "connect/:provider",         to: "oauth_callbacks#new",    as: :new_oauth_callbacks
   get "connect/:provider/callback", to: "oauth_callbacks#create", as: :create_oauth_callbacks
 
-  # Plaid Link is not OAuth2 — distinct controller. #new renders an HTML page
-  # that mounts the JS controller with a server-fetched link_token. #create
-  # accepts the public_token after the user completes the embedded Link widget.
-  # #resume handles Plaid OAuth-institution redirects (e.g. Chase) where the
-  # browser leaves the page mid-flow and lands back here with ?oauth_state_id=...
-  get  "provider_connections/plaid/new",      to: "plaid_link_callbacks#new",    as: :new_plaid_link_callbacks
-  get  "provider_connections/plaid/resume",   to: "plaid_link_callbacks#resume", as: :resume_plaid_link_callbacks
-  post "provider_connections/plaid/callback", to: "plaid_link_callbacks#create", as: :create_plaid_link_callbacks
+  # EmbeddedLink-style auth flows (Plaid Link today; MX/Yodlee/Akoya plug in
+  # the same way). Parameterized by :provider_key — the controller dispatches
+  # to the registered adapter's #start_link_flow / #complete_link_flow.
+  # #resume handles vendor OAuth-bank redirects (e.g. Chase via Plaid) where
+  # the browser leaves the page mid-flow and lands back with the same flow_id.
+  get  "provider_connections/:provider_key/link/new",      to: "embedded_link_callbacks#new",    as: :new_embedded_link_callbacks
+  get  "provider_connections/:provider_key/link/resume",   to: "embedded_link_callbacks#resume", as: :resume_embedded_link_callbacks
+  post "provider_connections/:provider_key/link/callback", to: "embedded_link_callbacks#create", as: :create_embedded_link_callbacks
 
   resources :provider_family_configs, only: [ :new, :create, :edit, :update, :destroy ]
   resources :provider_connections, only: [ :show, :destroy ] do

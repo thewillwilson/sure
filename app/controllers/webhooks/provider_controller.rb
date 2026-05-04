@@ -8,27 +8,50 @@
 # provider-specific logic (signature scheme, payload parsing, event handling)
 # lives on the adapter, not in this controller.
 #
-# Always returns 200 unless the signature itself is invalid; handler exceptions
-# are captured to Sentry inside the handler so a single bad payload doesn't
-# disable the endpoint.
+# Response codes:
+#   200 — signature verified; handler ran (any handler-side errors are
+#         captured to Sentry but the endpoint still returns 200 so upstream
+#         providers don't 24-hour-retry on transient/in-progress bugs)
+#   400 — signature verification failed, or the provider doesn't accept webhooks
+#   404 — unknown provider_key (registry lookup failed)
 class Webhooks::ProviderController < ApplicationController
   skip_before_action :verify_authenticity_token
   skip_authentication
 
   def receive
-    adapter = Provider::ConnectionRegistry.adapter_for(params[:provider_key])
+    adapter = begin
+      Provider::ConnectionRegistry.adapter_for(params[:provider_key])
+    rescue NotImplementedError
+      head :not_found and return
+    end
+
     raw_body = request.body.read
 
-    adapter.verify_webhook!(headers: request.headers, raw_body: raw_body)
-    adapter.webhook_handler_class.new(raw_body: raw_body, headers: request.headers).process
+    # Signature verification is the gate. If this raises, the request is
+    # rejected — providers should not retry an invalid signature.
+    begin
+      adapter.verify_webhook!(headers: request.headers, raw_body: raw_body)
+    rescue NotImplementedError => e
+      Sentry.capture_exception(e)
+      render json: { error: "Provider does not accept webhooks" }, status: :bad_request
+      return
+    rescue => e
+      Sentry.capture_exception(e)
+      Rails.logger.warn("[Webhooks::ProviderController] #{params[:provider_key]} signature verification failed: #{e.class}: #{e.message}")
+      render json: { error: "Invalid signature" }, status: :bad_request
+      return
+    end
+
+    # Handler runs post-signature. Any error here is a bug in our code, NOT a
+    # bad webhook — return 200 so the provider doesn't retry, but capture to
+    # Sentry so the bug surfaces.
+    begin
+      adapter.webhook_handler_class.new(raw_body: raw_body, headers: request.headers).process
+    rescue => e
+      Sentry.capture_exception(e)
+      Rails.logger.error("[Webhooks::ProviderController] #{params[:provider_key]} handler failed: #{e.class}: #{e.message}")
+    end
 
     render json: { received: true }, status: :ok
-  rescue NotImplementedError => e
-    Sentry.capture_exception(e)
-    render json: { error: "Provider does not accept webhooks" }, status: :bad_request
-  rescue => e
-    Sentry.capture_exception(e)
-    Rails.logger.error("[Webhooks::ProviderController] #{params[:provider_key]} verification failed: #{e.class}: #{e.message}")
-    render json: { error: "Invalid webhook" }, status: :bad_request
   end
 end

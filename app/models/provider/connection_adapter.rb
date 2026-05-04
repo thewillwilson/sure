@@ -85,4 +85,40 @@ module Provider::ConnectionAdapter
   def webhook_handler_class
     raise NotImplementedError, "#{self} does not accept webhooks"
   end
+
+  # ---- EmbeddedLink contract (for adapters with auth_class == Provider::Auth::EmbeddedLink)
+
+  # Starts a new link-token session. Returns a flow state Hash that
+  # EmbeddedLinkCallbacksController stashes in session[:provider_flows] under
+  # flow_id. Must include "link_token". Arbitrary other keys are preserved
+  # and handed back to .complete_link_flow.
+  #
+  # params[:connection_id] (when present) signals update/reauth mode — the
+  # adapter should issue a link_token bound to the existing connection's
+  # access_token.
+  def start_link_flow(family:, flow_id:, params:, resume_url:, webhooks_url:)
+    raise NotImplementedError, "#{self} must define .start_link_flow for EmbeddedLink flows"
+  end
+
+  # Completes a link-token session. Receives the consumed flow state hash and
+  # the request params (notably public_token). Performs the upstream exchange,
+  # creates and returns a Provider::Connection on the family.
+  def complete_link_flow(family:, flow:, params:)
+    raise NotImplementedError, "#{self} must define .complete_link_flow for EmbeddedLink flows"
+  end
+
+  # Stimulus controller name mounted on the embedded-link view. Different
+  # vendors ship different SDKs (Plaid Link, MX Connect Widget, Yodlee
+  # FastLink); each has its own JS controller.
+  def js_controller_name
+    raise NotImplementedError, "#{self} must define .js_controller_name for EmbeddedLink flows"
+  end
+
+  # Hash of data-* attributes the embedded-link view renders on the controller
+  # mount node — e.g. { controller: "plaid", plaid_link_token_value: "...",
+  # plaid_is_resume_value: true }. Adapter-owned because each vendor's JS
+  # controller has its own data-value naming.
+  def js_data_for(flow:, is_resume:)
+    raise NotImplementedError, "#{self} must define .js_data_for for EmbeddedLink flows"
+  end
 end

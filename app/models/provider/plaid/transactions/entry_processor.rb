@@ -74,7 +74,17 @@ class Provider::Plaid::Transactions::EntryProcessor
         name:                 plaid_transaction["merchant_name"],
         source:               "plaid",
         website_url:          plaid_transaction["website"],
-        logo_url:             plaid_transaction["logo_url"]
+        logo_url:             safe_https(plaid_transaction["logo_url"])
       )
+    end
+
+    # Restrict ingested logo URLs to HTTPS — same guard Provider::Account#safe_logo_uri
+    # applies to institution logos. Defends against malformed/malicious upstream
+    # payloads writing http: or javascript: schemes into merchants.logo_url.
+    def safe_https(url)
+      return nil if url.blank?
+      URI.parse(url).is_a?(URI::HTTPS) ? url : nil
+    rescue URI::InvalidURIError
+      nil
     end
 end

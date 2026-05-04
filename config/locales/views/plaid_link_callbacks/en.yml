@@ -1,5 +1,0 @@
----
-en:
-  plaid_link_callbacks:
-    new:
-      connecting: "Connecting to Plaid…"

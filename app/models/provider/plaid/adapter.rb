@@ -83,24 +83,24 @@ class Provider::Plaid::Adapter
   # once regardless of how many registrations point here.
   def self.connection_configs(family:)
     configs = []
-    if family.respond_to?(:can_connect_plaid_us?) && family.can_connect_plaid_us?
+    if Provider::Registry.plaid_provider_for_region(:us).present?
       configs << {
         key:  "plaid_us",
         name: "Plaid",
         description: "Connect to your US bank via Plaid",
         new_account_path: ->(_accountable_type, _return_to) {
-          Rails.application.routes.url_helpers.new_plaid_link_callbacks_path(region: "us")
+          Rails.application.routes.url_helpers.new_embedded_link_callbacks_path(provider_key: "plaid_us", region: "us")
         },
         existing_account_path: nil
       }
     end
-    if family.respond_to?(:can_connect_plaid_eu?) && family.can_connect_plaid_eu?
+    if Provider::Registry.plaid_provider_for_region(:eu).present?
       configs << {
         key:  "plaid_eu",
         name: "Plaid (EU)",
         description: "Connect to your EU bank via Plaid",
         new_account_path: ->(_accountable_type, _return_to) {
-          Rails.application.routes.url_helpers.new_plaid_link_callbacks_path(region: "eu")
+          Rails.application.routes.url_helpers.new_embedded_link_callbacks_path(provider_key: "plaid_eu", region: "eu")
         },
         existing_account_path: nil
       }
@@ -124,6 +124,74 @@ class Provider::Plaid::Adapter
       balance:     0,
       accountable: accountable
     )
+  end
+
+  # ---- EmbeddedLink contract --------------------------------------------
+
+  def self.js_controller_name = "plaid"
+
+  def self.start_link_flow(family:, flow_id:, params:, resume_url:, webhooks_url:)
+    if params[:connection_id].present?
+      connection = family.provider_connections.find(params[:connection_id])
+      region = connection.metadata["region"]
+      kind = "update"
+      access_token = connection.credentials["access_token"]
+    else
+      region = params[:region].to_s
+      raise ArgumentError, "Unknown region: #{region.inspect}" unless %w[us eu].include?(region)
+      kind = "new"
+      access_token = nil
+    end
+
+    link_token = Provider::Registry.plaid_provider_for_region(region.to_sym).get_link_token(
+      user_id:          family.id,
+      webhooks_url:     webhooks_url,
+      redirect_url:     resume_url,
+      accountable_type: params[:accountable_type],
+      access_token:     access_token
+    ).link_token
+
+    state = {
+      "kind"       => kind,
+      "region"     => region,
+      "link_token" => link_token,
+      "created_at" => Time.current.to_i
+    }
+    state["connection_id"] = connection.id if kind == "update"
+    state
+  end
+
+  def self.complete_link_flow(family:, flow:, params:)
+    region = flow["region"]
+    response = Provider::Registry.plaid_provider_for_region(region.to_sym)
+                                  .exchange_public_token(params.require(:public_token))
+
+    Provider::Connection.transaction do
+      conn = family.provider_connections.create!(
+        provider_key: "plaid_#{region}",
+        auth_type:    "embedded_link",
+        status:       :good,
+        credentials:  {},
+        metadata: {
+          "region"        => region,
+          "plaid_item_id" => response.item_id
+        }
+      )
+      conn.auth.store_access_token(response.access_token)
+      conn
+    end
+  end
+
+  def self.js_data_for(flow:, is_resume:)
+    {
+      controller:                "plaid",
+      plaid_link_token_value:    flow["link_token"],
+      plaid_region_value:        flow["region"],
+      plaid_is_update_value:     flow["kind"] == "update",
+      plaid_is_resume_value:     is_resume,
+      plaid_flow_id_value:       flow["__flow_id"], # set by the controller before render
+      plaid_connection_id_value: flow["connection_id"]
+    }
   end
 end
 

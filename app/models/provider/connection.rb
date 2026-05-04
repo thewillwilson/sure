@@ -28,17 +28,26 @@ class Provider::Connection < ApplicationRecord
   validates :provider_key, :auth_type, presence: true
   validates :auth_type, inclusion: { in: AUTH_TYPES }, if: :auth_type?
 
+  # Memoized — these read once per connection per render and prefer the
+  # already-loaded association (see _connection_provider_panel.html.erb's
+  # .includes(:provider_accounts)) over re-issuing LIMIT 1 queries.
   def institution_name
-    provider_accounts.first&.raw_payload&.dig("provider", "display_name")&.titleize.presence ||
+    @institution_name ||= first_provider_account&.raw_payload&.dig("provider", "display_name")&.titleize.presence ||
       provider_key.titleize
   end
 
   def logo_uri
-    provider_accounts.first&.safe_logo_uri
+    return @logo_uri if defined?(@logo_uri)
+    @logo_uri = first_provider_account&.safe_logo_uri
   end
 
   def pending_setup?
-    provider_accounts.unlinked_and_unskipped.exists?
+    return @pending_setup if defined?(@pending_setup)
+    @pending_setup = if provider_accounts.loaded?
+      provider_accounts.any? { |pa| pa.account_id.nil? && !pa.skipped? }
+    else
+      provider_accounts.unlinked_and_unskipped.exists?
+    end
   end
 
   # Adapter syncer protocol contract: every adapter's syncer class MUST
@@ -58,6 +67,11 @@ class Provider::Connection < ApplicationRecord
   end
 
   private
+
+    def first_provider_account
+      return @first_provider_account if defined?(@first_provider_account)
+      @first_provider_account = provider_accounts.loaded? ? provider_accounts.first : provider_accounts.first
+    end
 
     # Overrides Syncable's default `self.class::Syncer.new(self)` dispatch.
     # Provider::Connection is shared across providers, so we dispatch by provider_key

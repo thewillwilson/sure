@@ -6,14 +6,21 @@ class OauthCallbacksController < ApplicationController
   # POST /connect/:provider — initiates OAuth (mutates state, must not be GET).
   def new
     config = Current.family.provider_family_configs.find_by!(provider_key: params[:provider])
-    redirect_uri = create_oauth_callbacks_url(provider: config.provider_key)
+    # Build redirect_uri using the configured host rather than the request host.
+    # OAuth servers require the EXACT redirect_uri at exchange — and a Host-
+    # header-injection on a misconfigured deployment would otherwise seed an
+    # attacker-controlled redirect_uri here. Falls back to request-derived URL
+    # only if nothing is configured (dev defaults).
+    redirect_uri = create_oauth_callbacks_url(provider: config.provider_key, host: configured_host)
 
+    sandbox = sandbox_for(config)
     flow_id = SecureRandom.hex(16)
     write_flow!(flow_id, {
       "provider_key"              => config.provider_key,
       "provider_family_config_id" => config.id,
       "redirect_uri"              => redirect_uri,
       "psu_ip"                    => public_client_ip,
+      "sandbox"                   => sandbox,
       "created_at"                => Time.current.to_i
     })
 
@@ -25,7 +32,7 @@ class OauthCallbacksController < ApplicationController
       redirect_uri: redirect_uri,
       state:        flow_id,
       scope:        adapter.scopes,
-      sandbox:      sandbox_for(config)
+      sandbox:      sandbox
     )
     redirect_to auth_url, allow_other_host: true
   end
@@ -36,6 +43,18 @@ class OauthCallbacksController < ApplicationController
     unless flow
       Rails.logger.warn("[OauthCallbacksController] state mismatch or expired for provider=#{params[:provider]} family=#{Current.family&.id}")
       redirect_to settings_providers_path, alert: t("provider.connections.connection_failed")
+      return
+    end
+
+    if flow["kind"] == "reauth"
+      # Reauth flow: an existing connection's tokens have been refreshed via
+      # this callback. Look up the connection (still owned by current family)
+      # and exchange the new code into its credentials. No new connection.
+      @connection = Current.family.provider_connections.find(flow["connection_id"])
+      @connection.auth.exchange_code(code: params[:code])
+      @connection.update!(status: :good, sync_error: nil)
+      redirect_to provider_connection_path(@connection),
+                  notice: t("provider.connections.connected")
       return
     end
 
@@ -53,8 +72,9 @@ class OauthCallbacksController < ApplicationController
         credentials:            {},
         metadata: {
           "psu_ip"       => flow["psu_ip"],
-          "redirect_uri" => flow["redirect_uri"]
-        }
+          "redirect_uri" => flow["redirect_uri"],
+          "sandbox"      => flow["sandbox"]
+        }.compact
       )
       conn.auth.exchange_code(code: params[:code])
       conn
@@ -82,6 +102,10 @@ class OauthCallbacksController < ApplicationController
   end
 
   private
+
+    def configured_host
+      Rails.application.routes.default_url_options[:host] || request.host
+    end
 
     def sandbox_for(config)
       # TrueLayer puts a `sandbox` flag on FamilyConfig.credentials. Defaults to

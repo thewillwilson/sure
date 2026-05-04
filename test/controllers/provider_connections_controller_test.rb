@@ -28,12 +28,18 @@ class ProviderConnectionsControllerTest < ActionDispatch::IntegrationTest
     assert_raises(ActiveRecord::RecordNotFound) { @connection.reload }
   end
 
-  test "reauth sets session state and redirects to OAuth" do
+  test "reauth writes a reauth flow record and redirects to OAuth" do
     Provider::Auth::OAuth2.any_instance.stubs(:reauth_url).returns("https://auth.truelayer.com/?x=1")
     post reauth_provider_connection_path(@connection)
     assert_response :redirect
     assert_match "auth.truelayer.com", response.location
-    assert_equal @connection.id, session[:oauth_state]
+
+    flows = session[:provider_flows]
+    assert flows.is_a?(Hash) && flows.any?
+    flow = flows.values.first
+    assert_equal "reauth", flow["kind"]
+    assert_equal @connection.id, flow["connection_id"]
+    assert_equal "truelayer", flow["provider_key"]
   end
 
   test "save_setup creates a new account when mapping is 'new'" do

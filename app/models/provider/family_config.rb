@@ -3,10 +3,12 @@ class Provider::FamilyConfig < ApplicationRecord
 
   self.table_name = "provider_family_configs"
 
-  # Today every BYOK adapter takes the same shape (client_id + client_secret).
+  # Today every BYOK adapter takes the same shape (client_id + client_secret,
+  # plus an optional sandbox flag for providers that distinguish test/prod
+  # endpoints — TrueLayer being the current example).
   # When an adapter wants different keys, swap to a per-adapter
   # `credential_keys` hook on Provider::Registry.
-  ALLOWED_CREDENTIAL_KEYS = %w[client_id client_secret].freeze
+  ALLOWED_CREDENTIAL_KEYS = %w[client_id client_secret sandbox].freeze
 
   belongs_to :family
   has_many :provider_connections, class_name: "Provider::Connection",
