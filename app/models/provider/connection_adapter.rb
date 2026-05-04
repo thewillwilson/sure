@@ -71,4 +71,18 @@ module Provider::ConnectionAdapter
   def reauth_url(connection, redirect_uri:, state:)
     nil
   end
+
+  # Verifies the upstream webhook signature and raises if invalid. Adapters
+  # that don't accept webhooks can leave this raising. Webhooks::ProviderController
+  # calls this before dispatching to the handler.
+  def verify_webhook!(headers:, raw_body:)
+    raise NotImplementedError, "#{self} does not accept webhooks"
+  end
+
+  # Class implementing #process and accepting (connection:, raw_body:, headers:).
+  # Webhooks::ProviderController instantiates and calls #process after signature
+  # verification succeeds.
+  def webhook_handler_class
+    raise NotImplementedError, "#{self} does not accept webhooks"
+  end
 end

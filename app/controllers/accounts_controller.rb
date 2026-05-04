@@ -11,7 +11,6 @@ class AccountsController < ApplicationController
           .listable_manual
           .where(id: @accessible_account_ids)
           .order(:name)
-    @plaid_items = visible_provider_items(family.plaid_items.ordered.includes(:syncs, :plaid_accounts))
     @simplefin_items = visible_provider_items(family.simplefin_items.ordered.includes(:syncs))
     @lunchflow_items = visible_provider_items(family.lunchflow_items.ordered.includes(:syncs, :lunchflow_accounts))
     @enable_banking_items = visible_provider_items(family.enable_banking_items.ordered.includes(:syncs))
@@ -277,13 +276,6 @@ class AccountsController < ApplicationController
         @simplefin_sync_stats_map[item.id] = {}
         @simplefin_show_relink_map[item.id] = false
         @simplefin_duplicate_only_map[item.id] = false
-      end
-
-      # Plaid sync stats
-      @plaid_sync_stats_map = {}
-      @plaid_items.each do |item|
-        latest_sync = item.syncs.ordered.first
-        @plaid_sync_stats_map[item.id] = latest_sync&.sync_stats || {}
       end
 
       # Lunchflow sync stats

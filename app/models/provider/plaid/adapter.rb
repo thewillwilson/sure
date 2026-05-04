@@ -47,8 +47,34 @@ class Provider::Plaid::Adapter
     %w[Depository CreditCard Loan Investment]
   end
 
-  def self.syncer_class = Provider::Plaid::Syncer
-  def self.auth_class   = Provider::Auth::EmbeddedLink
+  def self.syncer_class          = Provider::Plaid::Syncer
+  def self.auth_class            = Provider::Auth::EmbeddedLink
+  def self.webhook_handler_class = Provider::Plaid::WebhookHandler
+
+  # Plaid signs webhooks with a JWT in the Plaid-Verification header and
+  # publishes the verification key via /webhook_verification_key/get. The
+  # existing Provider::Plaid#validate_webhook! does the work; we just route
+  # to the right region's client.
+  def self.verify_webhook!(headers:, raw_body:)
+    sig = headers["Plaid-Verification"] || headers["HTTP_PLAID_VERIFICATION"]
+    raise Provider::Plaid::Adapter::WebhookSignatureMissing, "missing Plaid-Verification header" if sig.blank?
+
+    region = headers["X-Provider-Region"] || extract_region_from_body(raw_body)
+    Provider::Registry.plaid_provider_for_region(region).validate_webhook!(sig, raw_body)
+  end
+
+  WebhookSignatureMissing = Class.new(StandardError)
+
+  # Plaid's webhook payload doesn't carry the region, so we infer it from the
+  # connection (looking up by item_id). If that fails we default to :us — the
+  # signature check would fail anyway if the wrong region's keys were used.
+  def self.extract_region_from_body(raw_body)
+    parsed = JSON.parse(raw_body) rescue {}
+    item_id = parsed["item_id"]
+    return :us if item_id.blank?
+    conn = Provider::Connection.where("metadata->>'plaid_item_id' = ?", item_id).first
+    (conn&.metadata&.[]("region") || "us").to_sym
+  end
 
   # Returns both regional configs (US and EU) on every call — the adapter is
   # registered twice (plaid_us + plaid_eu) so ConnectionRegistry calls this

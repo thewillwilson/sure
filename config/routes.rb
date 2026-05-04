@@ -494,16 +494,6 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :plaid_items, only: %i[new edit create destroy] do
-    collection do
-      get :select_existing_account
-      post :link_existing_account
-    end
-
-    member do
-      post :sync
-    end
-  end
 
   resources :simplefin_items, only: %i[index new create show edit update destroy] do
     collection do
@@ -554,8 +544,10 @@ Rails.application.routes.draw do
   end
 
   namespace :webhooks do
-    post "plaid"
-    post "plaid_eu"
+    # Generic provider webhook entry point. Adapters declare verify_webhook!
+    # + webhook_handler_class on Provider::ConnectionAdapter.
+    post "providers/:provider_key", to: "provider#receive", as: :provider
+
     post "stripe"
   end
 

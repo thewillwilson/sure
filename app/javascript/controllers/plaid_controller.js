@@ -6,11 +6,7 @@ export default class extends Controller {
     linkToken: String,
     region: { type: String, default: "us" },
     isUpdate: { type: Boolean, default: false },
-    itemId: String,
-    // When true, public_token is exchanged via the new Provider::Connection
-    // framework endpoint. False (default) preserves the legacy flow for
-    // existing PlaidItem reauths during cutover.
-    framework: { type: Boolean, default: false },
+    connectionId: String,
   };
 
   connect() {
@@ -95,8 +91,8 @@ export default class extends Controller {
 
   handleSuccess = (public_token, metadata) => {
     if (this.isUpdateValue) {
-      // Trigger a sync to verify the connection and update status
-      fetch(`/plaid_items/${this.itemIdValue}/sync`, {
+      // Reauth flow — trigger a sync on the existing Provider::Connection.
+      fetch(`/provider_connections/${this.connectionIdValue}/sync`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -104,45 +100,20 @@ export default class extends Controller {
           "X-CSRF-Token": document.querySelector('[name="csrf-token"]').content,
         },
       }).then(() => {
-        // Refresh the page to show the updated status
         window.location.href = "/accounts";
       });
       return;
     }
 
-    if (this.frameworkValue) {
-      // New Provider::Connection framework path
-      fetch("/provider_connections/plaid/callback", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": document.querySelector('[name="csrf-token"]').content,
-        },
-        body: JSON.stringify({
-          public_token: public_token,
-          region: this.regionValue,
-        }),
-      }).then((response) => {
-        if (response.redirected) {
-          window.location.href = response.url;
-        }
-      });
-      return;
-    }
-
-    // Legacy: create a PlaidItem via the per-account-adapter path.
-    fetch("/plaid_items", {
+    fetch("/provider_connections/plaid/callback", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-CSRF-Token": document.querySelector('[name="csrf-token"]').content,
       },
       body: JSON.stringify({
-        plaid_item: {
-          public_token: public_token,
-          metadata: metadata,
-          region: this.regionValue,
-        },
+        public_token: public_token,
+        region: this.regionValue,
       }),
     }).then((response) => {
       if (response.redirected) {

@@ -76,17 +76,16 @@ class SimplefinItemsControllerTest < ActionDispatch::IntegrationTest
     # Link the primary SimpleFIN provider to account A via AccountProvider (legacy link cleared by action)
     AccountProvider.create!(account: account_a, provider: sfa_primary)
 
-    # Also link a different provider TYPE (Plaid) to account A so it is NOT orphaned
-    plaid_item = PlaidItem.create!(family: @family, name: "Plaid Conn", access_token: "test-token", plaid_id: "test-plaid-id")
-    plaid_acct = PlaidAccount.create!(
-      plaid_item: plaid_item,
-      plaid_id: "test-plaid-acct",
-      name: "Plaid A",
-      plaid_type: "depository",
+    # Also link a different provider TYPE (Lunchflow) to account A so it is NOT orphaned
+    lunchflow_item = @family.lunchflow_items.create!(name: "LF Conn", api_key: "test-key")
+    lf_acct = lunchflow_item.lunchflow_accounts.create!(
+      name: "LF A",
+      lunchflow_id: "lf-test-id",
+      account_type: "checking",
       currency: "USD",
       current_balance: 0
     )
-    AccountProvider.create!(account: account_a, provider: plaid_acct)
+    AccountProvider.create!(account: account_a, provider: lf_acct)
 
     # Perform relink: point sfa_primary at account B
     post link_existing_account_simplefin_items_path, params: {

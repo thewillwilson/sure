@@ -1,12 +1,6 @@
-# Connection-framework syncer for Plaid.
-#
-# Phase 2 (current) implements only #discover_accounts_only — the bare minimum
-# the Plaid Link callback flow needs after exchanging public_token, so the
-# user lands on the setup page with provider_accounts already populated.
-#
-# Phase 3 fills in #perform_sync (transactions, holdings, liabilities, balance
-# anchoring, etc.) and ports the existing PlaidAccount sub-processors into the
-# Provider::Plaid::* namespace.
+# Connection-framework syncer for Plaid. Mirrors Provider::TruelayerSyncer's
+# shape but calls into Plaid-specific sub-processors (which read from the
+# provider_accounts.raw_*_payload columns populated by the importer).
 class Provider::Plaid::Syncer
   include SyncStats::Collector
 
@@ -14,26 +8,83 @@ class Provider::Plaid::Syncer
     @connection = connection
   end
 
+  # Lightweight discovery for the post-OAuth callback — populates
+  # provider_accounts but doesn't run sync. Called by Provider::Connection
+  # via discover_accounts!.
   def discover_accounts_only
-    response = client.get_item_accounts(access_token)
-    response.accounts.each do |raw|
-      @connection.provider_accounts
-                 .find_or_initialize_by(external_id: raw.account_id)
-                 .update!(
-                   external_name:    raw.name,
-                   external_type:    raw.type,
-                   external_subtype: raw.subtype,
-                   currency:         raw.balances&.iso_currency_code || raw.balances&.unofficial_currency_code,
-                   raw_payload:      raw.to_hash
-                 )
+    @connection.update!(metadata: @connection.metadata.merge(
+      "billed_products"    => item_response.item.billed_products,
+      "available_products" => item_response.item.available_products,
+      "institution_id"     => item_response.item.institution_id
+    ))
+
+    snapshot = Provider::Plaid::AccountsSnapshot.new(@connection, plaid_provider: client)
+    snapshot.accounts.each do |raw_account|
+      provider_account = @connection.provider_accounts.find_or_initialize_by(external_id: raw_account.account_id)
+      provider_account.update!(
+        external_name:    raw_account.name,
+        external_type:    raw_account.type,
+        external_subtype: raw_account.subtype,
+        currency:         raw_account.balances&.iso_currency_code || raw_account.balances&.unofficial_currency_code,
+        raw_payload:      raw_account.to_hash
+      )
     end
   end
 
-  # Phase 3 fills this in. Until then, calling perform_sync on a Plaid
-  # connection is a programming error — connections shouldn't reach the
-  # sync path until the syncer is complete.
   def perform_sync(sync)
-    raise NotImplementedError, "Provider::Plaid::Syncer#perform_sync is built in Phase 3"
+    token = @connection.auth.fresh_access_token
+
+    # Phase 1: Import latest item-level data (institution metadata, item state)
+    item     = client.get_item(token).item
+    inst     = client.get_institution(item.institution_id).institution
+    @connection.update!(metadata: @connection.metadata.merge(
+      "billed_products"      => item.billed_products,
+      "available_products"   => item.available_products,
+      "institution_id"       => item.institution_id,
+      "raw_item_payload"     => item.to_hash,
+      "raw_institution_payload" => inst.to_hash
+    ))
+
+    # Phase 2: Pull all per-account data (transactions, investments, liabilities)
+    # and upsert into raw_*_payload columns on provider_accounts.
+    snapshot = Provider::Plaid::AccountsSnapshot.new(@connection, plaid_provider: client)
+
+    Provider::Connection.transaction do
+      snapshot.accounts.each do |raw_account|
+        provider_account = @connection.provider_accounts.find_or_initialize_by(external_id: raw_account.account_id)
+        Provider::Plaid::AccountImporter.new(
+          provider_account,
+          account_snapshot: snapshot.get_account_data(raw_account.account_id)
+        ).import
+      end
+      # Persist the next cursor so subsequent syncs are incremental.
+      cursor = snapshot.transactions_cursor
+      if cursor.present?
+        @connection.update!(metadata: @connection.metadata.merge("next_cursor" => cursor))
+      end
+    end
+
+    collect_setup_stats(sync, provider_accounts: @connection.provider_accounts)
+
+    # Phase 3: Run the per-account processor on every linked provider_account.
+    # Unlinked (account_id nil) and skipped accounts are ignored.
+    linked = @connection.provider_accounts.where.not(account_id: nil).where(skipped: false).includes(:account)
+    linked.each do |pa|
+      Provider::Plaid::AccountProcessor.new(pa).process
+      pa.update!(last_synced_at: Time.current)
+      collect_transaction_stats(sync, account_ids: [ pa.account_id ], source: "plaid")
+    end
+
+    @connection.update!(status: :good, last_synced_at: Time.current, sync_error: nil)
+  rescue Plaid::ApiError => e
+    handle_plaid_error(e)
+  rescue Provider::Auth::ReauthRequiredError
+    @connection.update!(status: :requires_update, sync_error: "reauth_required")
+  rescue => e
+    @connection.update!(sync_error: e.message)
+    raise
+  ensure
+    collect_health_stats(sync)
   end
 
   def perform_post_sync; end
@@ -44,11 +95,24 @@ class Provider::Plaid::Syncer
       Provider::Registry.plaid_provider_for_region(region)
     end
 
-    def access_token
-      @connection.credentials["access_token"]
-    end
-
     def region
       (@connection.metadata["region"] || "us").to_sym
+    end
+
+    def item_response
+      @item_response ||= client.get_item(@connection.credentials["access_token"])
+    end
+
+    # Plaid surfaces login-required as an ITEM_LOGIN_REQUIRED error code in
+    # the response body. Mark the connection requires_update and return
+    # without raising — Sidekiq retry would just fail again.
+    def handle_plaid_error(error)
+      body = JSON.parse(error.response_body) rescue {}
+      if body["error_code"] == "ITEM_LOGIN_REQUIRED"
+        @connection.auth.mark_requires_update!(reason: "ITEM_LOGIN_REQUIRED")
+      else
+        @connection.update!(sync_error: error.message)
+        raise error
+      end
     end
 end
