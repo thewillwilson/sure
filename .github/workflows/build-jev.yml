@@ -1,0 +1,45 @@
+name: Build jev image
+
+on:
+  push:
+    branches:
+      - thewillwilson/jev-build
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      IMAGE: ghcr.io/thewillwilson/sure-jev
+      TAG: jev-48d7a2e
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: .
+          platforms: linux/amd64
+          build-args: BUILD_COMMIT_SHA=48d7a2efb95824368caf6f0e7e713adf7adb197b
+          tags: ${{ env.IMAGE }}:${{ env.TAG }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/thewillwilson/sure
+            org.opencontainers.image.revision=48d7a2efb95824368caf6f0e7e713adf7adb197b
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+          push: true
