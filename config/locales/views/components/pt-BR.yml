@@ -125,6 +125,25 @@ pt-BR:
           start_principal: O saldo devedor do principal no início deste dia
           start_value: O valor do ativo no início deste dia
       chart:
+        loan:
+          actual: "Saldo registrado"
+          scheduled: "Cronograma original"
+          projected: "Projeção a partir de hoje"
+          today: "Hoje"
+          interactive_chart: "gráfico interativo"
+          no_payoff: "não quitado no ritmo atual de pagamento"
+          aria_description: "Gráfico do saldo do empréstimo. Saldo registrado de %{current_balance}. Quitação prevista no cronograma original em %{scheduled_payoff_date}. Quitação projetada a partir do saldo de hoje em %{projected_payoff_date}."
+          aria_actual_history_starts: "O histórico de saldo registrado começa em %{date}."
+          projected_payoff: "Quitação projetada"
+          months_saved:
+            one: "%{count} mês antes do previsto"
+            other: "%{count} meses antes do previsto"
+          on_schedule: "Dentro do cronograma"
+          interest_saved: "Juros economizados"
+          not_converged: "No ritmo atual de pagamento, este saldo não é quitado até o vencimento original; ainda restariam %{balloon} a pagar."
+          projection_basis: "Compara o saldo registrado hoje com o saldo previsto no cronograma para o mesmo dia. Um pagamento lançado antes da data prevista aparece como adiantado até essa data; um lançado depois aparece como atrasado."
+          legend: "Séries do gráfico"
+          since_start: "desde o início do empréstimo"
         no_data_available: Nenhum dado disponível
         title:
           balance: Saldo
@@ -133,6 +152,7 @@ pt-BR:
           estimated_property_value: Valor estimado do imóvel
           estimated_vehicle_value: Valor estimado do veículo
           holdings_value: Valor das posições
+          loan_remaining_balance: "Saldo devedor"
           remaining_principal_balance: Saldo devedor do principal
           total_account_value: Valor total da conta
           total_gains: Ganhos totais

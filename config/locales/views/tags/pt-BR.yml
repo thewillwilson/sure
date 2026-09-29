@@ -15,8 +15,14 @@ pt-BR:
       new: Nova tag
       tags: Tags
       delete_all: Excluir todas
+    menu:
+      label: "Editar tags"
+      loading: "Carregando tags..."
     new:
       new: Nova tag
+    summary:
+      add: "Adicionar tags"
+      title: "Tags: %{names}"
     tag:
       delete: Excluir
       edit: Editar

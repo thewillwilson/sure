@@ -31,7 +31,7 @@ pt-BR:
     depositories: Contas bancárias
     enable_banking_items: Enable Banking
     family_exports: Exportações
-    family_merchants: Comerciantes
+    family_merchants: Estabelecimentos
     feedback: Feedback
     guides: Guias
     holdings: Posições
@@ -49,7 +49,7 @@ pt-BR:
     loans: Empréstimos
     lunchflow_items: Lunch Flow
     mcp: Servidor MCP
-    merchants: Comerciantes
+    merchants: Estabelecimentos
     mercury_items: Mercury
     messages: Mensagens
     mfa: Autenticação em dois fatores

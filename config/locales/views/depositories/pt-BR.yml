@@ -9,6 +9,9 @@ pt-BR:
     new:
       title: Inserir saldo da conta
     subtypes:
+      cash:
+        long: "Dinheiro em espécie"
+        short: "Dinheiro"
       cd:
         long: Certificado de Depósito Bancário (CDB)
         short: CDB

@@ -77,14 +77,14 @@ pt-BR:
         issuer_label: URL do emissor
         issuer_placeholder: https://your-idp.example.com/realms/your-realm
         issuer_help: URL do emissor OIDC (valida .well-known/openid-configuration)
-        client_id_label: Client ID
+        client_id_label: ID do cliente
         client_id_placeholder: your-client-id
-        client_id_help: Client ID OAuth do seu provedor de identidade
-        client_secret_label: Client Secret
+        client_id_help: ID do cliente OAuth fornecido pelo seu provedor de identidade
+        client_secret_label: Chave secreta do cliente
         client_secret_placeholder_new: your-client-secret
         client_secret_placeholder_existing: ••••••••
-        client_secret_help: Client secret OAuth (criptografado no banco de dados)
-        client_secret_help_existing: Deixe em branco para manter o secret atual
+        client_secret_help: Chave secreta OAuth do cliente (criptografada no banco de dados)
+        client_secret_help_existing: Deixe em branco para manter a chave secreta atual
         redirect_uri_label: URL de callback
         redirect_uri_placeholder: https://yourdomain.com/auth/openid_connect/callback
         redirect_uri_help: Configure esta URL no seu provedor de identidade

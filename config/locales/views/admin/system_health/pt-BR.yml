@@ -8,6 +8,7 @@ pt-BR:
         title: Notificações push
         requested_at: Último teste solicitado em %{time}
         result_help: O aceite pelo APNs não confirma a entrega no seu dispositivo. Atualize para ver os resultados do worker. Os resultados ficam guardados por 24 horas.
+        results_label: "Resultados do teste"
         device: Dispositivo %{number}
         pending: Pendente
         refresh: Atualizar resultados
@@ -81,6 +82,7 @@ pt-BR:
           run_checks: Executar verificações novamente
           last_checked: Verificações em tempo real concluídas há %{time_ago}. Os resultados ficam em cache por pouco tempo.
           not_checked_help: Abra diretamente a URL de status da IA ou execute as verificações para confirmar que o serviço está ativo.
+          loading: "Executando verificações em tempo real…"
           alerts:
             custom_openai:
               title: A verificação do vector store hospedado falhou neste endpoint personalizado
@@ -230,7 +232,7 @@ pt-BR:
             unsupported_provider: O provedor não suporta esta verificação
           worker:
             title: Verificação do worker
-            description: As verificações acima foram executadas a partir deste processo web. A maior parte do trabalho de IA -- respostas do assistente, processamento de PDF, embeddings, categorização automática e detecção de comerciantes -- é executada, na verdade, em um processo worker do Sidekiq, que pode ter acesso de rede, DNS, regras de proxy ou até credenciais carregadas diferentes. Enfileire uma verificação para validar a configuração e a conectividade do próprio worker.
+            description: As verificações acima foram executadas a partir deste processo web. A maior parte do trabalho de IA -- respostas do assistente, processamento de PDF, embeddings, categorização automática e detecção de estabelecimentos -- é executada, na verdade, em um processo worker do Sidekiq, que pode ter acesso de rede, DNS, regras de proxy ou até credenciais carregadas diferentes. Enfileire uma verificação para validar a configuração e a conectividade do próprio worker.
             verify_button: Verificar configuração do worker
             coverage_notice: Cada verificação valida exatamente um processo worker -- aquele que a retirar da fila. Com mais de uma réplica do worker, um resultado aprovado não confirma que todos os workers estão saudáveis; enfileire a verificação novamente para testar outro.
             empty:

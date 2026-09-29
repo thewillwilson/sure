@@ -76,6 +76,7 @@ pt-BR:
       pulse_next_seven: nos próximos 7 dias
       pulse_bar_aria: '%{percent}% das contas a pagar deste mês quitadas'
       next_up: A seguir
+      view_calendar: "Ver calendário"
       view_upcoming: Ver próximas
       date_today: Hoje
       date_tomorrow: Amanhã
@@ -97,7 +98,7 @@ pt-BR:
     manage_payments: Gerenciar pagamentos
     view_full_bill: Ver conta a pagar completa
     match:
-      same_merchant: Mesmo comerciante
+      same_merchant: Mesmo estabelecimento
       name_matches: Nome corresponde
       exact_amount: Valor exato
       amount_off: Diferença de %{amount}

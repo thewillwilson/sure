@@ -20,8 +20,8 @@ pt-BR:
           title: Categorizador de Transações
           subtitle: A IA categoriza automaticamente suas transações com base nas suas categorias definidas
         merchant_detector:
-          title: Detector de Comerciantes
-          subtitle: A IA identifica e enriquece dados de transações com informações do comerciante
+          title: Detector de Estabelecimentos
+          subtitle: A IA identifica e enriquece dados de transações com informações do estabelecimento
         save: Salvar prompts
         save_confirm:
           title: Salvar prompts de IA personalizados?
@@ -150,7 +150,7 @@ pt-BR:
             é irreversível.
           title: Excluir conta?
         confirm_reset:
-          body: Tem certeza de que deseja resetar sua conta? Isso excluirá todas as suas contas, categorias, comerciantes, tags e outros dados. Esta ação não pode ser desfeita.
+          body: Tem certeza de que deseja resetar sua conta? Isso excluirá todas as suas contas, categorias, estabelecimentos, tags e outros dados. Esta ação não pode ser desfeita.
           title: Resetar conta?
         confirm_reset_with_sample_data:
           body: Tem certeza de que deseja redefinir sua conta e carregar dados de exemplo? Isso excluirá seus dados existentes e os substituirá por dados de demonstração para que você possa explorar o Sure com segurança.
@@ -166,7 +166,7 @@ pt-BR:
         delete_account_warning: Excluir sua conta removerá permanentemente todos
           os seus dados e não pode ser desfeito.
         reset_account: Resetar conta
-        reset_account_warning: Resetar sua conta excluirá todas as suas contas, categorias, comerciantes, tags e outros dados, mas manterá sua conta de usuário intacta.
+        reset_account_warning: Resetar sua conta excluirá todas as suas contas, categorias, estabelecimentos, tags e outros dados, mas manterá sua conta de usuário intacta.
         reset_account_with_sample_data: Reiniciar e pré-carregar
         reset_account_with_sample_data_warning: Exclua todos os seus dados existentes e, em seguida, carregue novos dados de amostra para que você possa explorar um ambiente pré-configurado.
         email: E-mail
@@ -230,7 +230,7 @@ pt-BR:
       imports_label: Importações
       exports_label: Exportações
       logout: Sair
-      merchants_label: Comerciantes
+      merchants_label: Estabelecimentos
       guides_label: Guias
       other_section_title: Mais
       preferences_label: Preferências
@@ -335,6 +335,21 @@ pt-BR:
         eyebrow: Configuração
         need_help: Precisa de ajuda?
       connect: Conectar
+      financekit:
+        app_store: "App Store"
+        coming_soon: "Em breve!"
+        description: "Gerencie as conexões com a Apple Wallet no app do Sure para iOS. Os dados da Wallet são sincronizados enquanto o app está aberto; a sincronização em segundo plano ainda não está disponível."
+        summary: "Sincronização da Wallet"
+        accounts: "Contas vinculadas"
+        linked_accounts:
+          one: "1 conta vinculada"
+          other: "%{count} contas vinculadas"
+        status:
+          active: "Sincronização ativa"
+          repair_required: "Reparo necessário — abra o app do Sure para iOS"
+        last_accepted_at: "Último recebimento pelo Sure"
+        last_imported_at: "Última importação para a sua família"
+        not_yet: "Ainda não"
       groups:
         your_connections: Suas conexões
         available: Disponíveis
@@ -359,10 +374,12 @@ pt-BR:
       sync_provider_in_progress: Sincronização iniciada.
       recently_synced: Sincronizado recentemente. Tente novamente em instantes.
       taglines:
+        financekit: "Sincronize (algumas) contas do FinanceKit pelo app do Sure para iOS."
         akahu: Sincronize instituições financeiras da Nova Zelândia via Akahu.
         simplefin: Conecte contas bancárias dos EUA pelo protocolo aberto SimpleFIN.
         lunchflow: Conecte mais de 20 mil bancos de mais de 40 países (Reino Unido, UE, EUA e mais!)
         redbark: Sincronize contas bancárias australianas via open banking da Redbark.
+        up: "Sincronize contas do banco australiano Up com um token de acesso pessoal."
         monobank: Sincronize cartões e cofrinhos do Monobank ucraniano com um token de API pessoal.
         fio: Sincronize uma conta do Fio banka com um token de API somente leitura.
         enable_banking: Sincronize contas bancárias europeias via open banking PSD2.
@@ -613,11 +630,16 @@ pt-BR:
         qr_instruction: Escaneie o QR code com o app da Trade Republic e aprove o login.
         qr_success: Login aprovado. O Sure está atualizando a página do provedor.
         qr_error: Não foi possível iniciar o login por QR code. Tente novamente.
+        add_account: "Adicionar outra conexão"
         save_configuration: Salvar e iniciar login
         update_configuration: Atualizar configuração
         sync: Sincronizar
+        syncing: "Sincronizando..."
         disconnect: Desconectar Trade Republic
         disconnect_confirm: Desconectar a Trade Republic? Suas contas sincronizadas se tornarão contas manuais.
+        disconnect_confirm_with_identifier: "Desconectar a conexão da Trade Republic com final %{last4}? Suas contas sincronizadas passarão a ser contas manuais."
+        identifier_phone: "Telefone"
+        identifier_account: "Conta"
         status_configured_prefix: Conectado. Acesse a aba
         accounts_tab: Contas
         setup_accounts: Configurar contas

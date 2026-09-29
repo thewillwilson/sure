@@ -110,7 +110,7 @@ pt-BR:
         apply_configuration: Aplicar configuração
       merchant_import:
         button_label: Continuar
-        description: Envie um arquivo CSV com seus comerciantes. Mapearemos as colunas automaticamente para você.
+        description: Envie um arquivo CSV com seus estabelecimentos. Mapearemos as colunas automaticamente para você.
         instructions: Selecione continuar para processar seu CSV e avançar para a etapa de limpeza.
       actual_import:
         preconfigured_notice: Pré-configuramos sua importação do Actual Budget para você. Siga para a próxima etapa.
@@ -284,7 +284,7 @@ pt-BR:
           qif_import: QIF
           category_import: Categoria
           rule_import: Regra
-          merchant_import: Comerciante
+          merchant_import: Estabelecimento
           pdf_import: PDF
           document_import: Documento
           sure_import: Sure
@@ -302,7 +302,7 @@ pt-BR:
       tab_financial_tools: Ferramentas financeiras e arquivos
       tab_raw_data: Dados brutos
       import_ynab: Importar do YNAB
-      import_merchants: Importar comerciantes
+      import_merchants: Importar estabelecimentos
       import_actual: Importar do Actual Budget
       import_rules: Importar regras
       import_qif: Importar do Quicken (QIF)
@@ -320,6 +320,28 @@ pt-BR:
       empty_summary: Não foi possível encontrar registros importáveis neste arquivo. Ele pode estar vazio, ou as linhas não correspondem ao formato de exportação esperado (cada linha deve ser um objeto JSON com as chaves «type» e «data», usando tipos suportados por esta importação).
       publish_import: Publicar importação
       back_to_imports: Voltar às importações
+      missing_merchant_warning_title: "Alguns estabelecimentos não estão nesta exportação"
+      missing_merchant_warning_description:
+        one: "1 referência a estabelecimento neste arquivo aponta para um estabelecimento que não está incluído. Isso pode acontecer com exportações feitas antes de os estabelecimentos atribuídos pelos provedores serem incluídos nas exportações do Sure. Você ainda pode publicar esta importação: o registro afetado será importado sem estabelecimento, e você pode ajustá-lo depois."
+        other: "%{count} referências a estabelecimentos neste arquivo apontam para estabelecimentos que não estão incluídos. Isso pode acontecer com exportações feitas antes de os estabelecimentos atribuídos pelos provedores serem incluídos nas exportações do Sure. Você ainda pode publicar esta importação: os registros afetados serão importados sem estabelecimento, e você pode ajustá-los depois."
+      skipped_recurring_description:
+        one: "1 transação recorrente não tem nome e seu estabelecimento está ausente, então será ignorada. As transações recorrentes detectadas automaticamente são recriadas após a importação."
+        other: "%{count} transações recorrentes não têm nome e seus estabelecimentos estão ausentes, então serão ignoradas. As transações recorrentes detectadas automaticamente são recriadas após a importação."
+      reused_taxonomy_notice_title: "Algumas categorias, tags ou estabelecimentos já existem"
+      reused_taxonomy_notice_description:
+        one: "1 categoria, tag ou estabelecimento deste arquivo já existe na sua conta (por exemplo, as categorias padrão criadas no cadastro inicial). Ele será reaproveitado e atualizado com os dados deste arquivo, em vez de ser duplicado."
+        other: "%{count} categorias, tags ou estabelecimentos deste arquivo já existem na sua conta (por exemplo, as categorias padrão criadas no cadastro inicial). Eles serão reaproveitados e atualizados com os dados deste arquivo, em vez de serem duplicados."
+      provider_merchant_diff_title: "Alguns estabelecimentos já existem com dados diferentes"
+      provider_merchant_diff_description:
+        one: "1 estabelecimento deste arquivo já existe com dados diferentes. O estabelecimento existente será mantido e os valores deste arquivo não serão aplicados."
+        other: "%{count} estabelecimentos deste arquivo já existem com dados diferentes. Os estabelecimentos existentes serão mantidos e os valores deste arquivo não serão aplicados."
+      provider_merchant_diff_summary: "Ver diferenças"
+      provider_merchant_diff_none: "nenhum"
+      provider_merchant_diff_fields:
+        website_url: "Site"
+        name: "Nome"
+        provider_merchant_id: "ID no provedor"
+      provider_merchant_diff_row: "%{field}: mantendo %{kept}; o arquivo tem %{imported}"
     mapping_labels:
       account_type: Tipo de conta
       account: Conta
@@ -332,7 +354,7 @@ pt-BR:
       categories: Categorias
       tags: Tags
       rules: Regras
-      merchants: Comerciantes
+      merchants: Estabelecimentos
       recurring_transactions: Transações recorrentes
       transfers: Transferências
       rejected_transfers: Transferências rejeitadas
@@ -434,7 +456,7 @@ pt-BR:
       qif_import: Importação QIF
       category_import: Importação de categorias
       rule_import: Importação de regras
-      merchant_import: Importação de comerciantes
+      merchant_import: Importação de estabelecimentos
       pdf_import: Importação de PDF
       document_import: Importação de documento
       sure_import: Importação do Sure

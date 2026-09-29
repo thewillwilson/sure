@@ -94,17 +94,17 @@ pt-BR:
         json_mode_json_object: JSON Object
         json_mode_help: O modo Estrito funciona melhor com modelos de raciocínio (qwen-thinking, deepseek-reasoner). O modo Nenhum funciona melhor com modelos padrão (llama, mistral, gpt-oss).
         budget_heading: Limites de tokens
-        budget_description: Aplica-se às chamadas compatíveis com OpenAI (chat, categorização automática, detecção de comerciantes e processamento de PDFs). Os valores padrão são conservadores, pensados para modelos locais com contexto pequeno. Aumente-os para modelos em nuvem com janelas de contexto maiores.
+        budget_description: Aplica-se às chamadas compatíveis com OpenAI (chat, categorização automática, detecção de estabelecimentos e processamento de PDFs). Os valores padrão são conservadores, pensados para modelos locais com contexto pequeno. Aumente-os para modelos em nuvem com janelas de contexto maiores.
         context_window_label: Janela de contexto (opcional)
         context_window_help: 'Total de tokens que o modelo aceita. Padrão: 2048 — aumente para 8192+ para a OpenAI em nuvem ou modelos locais com contexto grande.'
         max_response_tokens_label: Máximo de tokens na resposta (opcional)
         max_response_tokens_help: 'Tokens reservados para a resposta do modelo. Padrão: 512. Reduza para liberar espaço para um histórico mais longo.'
         max_items_per_call_label: Máximo de itens por lote (opcional)
-        max_items_per_call_help: 'Limite superior dos lotes de categorização automática / detecção de comerciantes. Padrão: 25. Lotes maiores são divididos automaticamente para caber na janela de contexto.'
+        max_items_per_call_help: 'Limite superior dos lotes de categorização automática / detecção de estabelecimentos. Padrão: 25. Lotes maiores são divididos automaticamente para caber na janela de contexto.'
         timeout_heading: Tempos limite
         timeout_description: Controla por quanto tempo as chamadas a modelos compatíveis com OpenAI podem durar antes que o Sure desista. Aumente esses valores se você roda um modelo local em hardware lento.
         openai_request_timeout_label: Tempo limite da requisição em segundos (opcional)
-        openai_request_timeout_help: 'Padrão: 60. Aplica-se a cada requisição HTTP compatível com OpenAI, incluindo categorização automática, detecção de comerciantes, chat, processamento de PDFs e chamadas ao vector store. OPENAI_REQUEST_TIMEOUT substitui este campo.'
+        openai_request_timeout_help: 'Padrão: 60. Aplica-se a cada requisição HTTP compatível com OpenAI, incluindo categorização automática, detecção de estabelecimentos, chat, processamento de PDFs e chamadas ao vector store. OPENAI_REQUEST_TIMEOUT substitui este campo.'
         ai_response_timeout_label: Tempo limite da resposta em segundos (opcional)
         ai_response_timeout_help: 'Padrão: 90. Aplica-se apenas ao watchdog do turno completo do chat, então dimensione-o como uma soma: (1 + ASSISTANT_MAX_TOOL_CALL_ITERATIONS) × tempo limite da requisição, mais o tempo de execução das ferramentas e de fila. AI_RESPONSE_TIMEOUT substitui este campo.'
       yahoo_finance_settings:
@@ -146,6 +146,8 @@ pt-BR:
         invalid_llm_budget: '%{field} deve ser um número inteiro ≥ %{minimum}.'
         invalid_anthropic_base_url: A URL base da Anthropic deve ser uma URL http(s).
         anthropic_model_required_for_base_url: O modelo da Anthropic é obrigatório quando uma URL base personalizada é definida.
+        invalid_jev_endpoint: "O endpoint do Jev precisa ser uma URL https. HTTP simples só é aceito para localhost."
+        invalid_categorization_rate: "%{field} precisa ser um número entre 0 e 1."
         scheduler_sync_failed: Configurações salvas, mas não foi possível atualizar o agendamento de sincronização. Tente novamente ou verifique os logs do servidor.
       clear_cache:
         cache_cleared: O cache de dados foi limpo. Isso pode levar alguns instantes para ser concluído.
@@ -170,6 +172,18 @@ pt-BR:
         agent_id_label: ID do agente (opcional)
         agent_id_placeholder: main (padrão)
         agent_id_help: Direciona para um agente específico quando o provedor hospeda vários. Deixe em branco para usar o padrão.
+        agent_discovery_configure_first: "Salve uma URL de endpoint e um token de API válidos para carregar os agentes disponíveis."
+        external_agent_required: "Selecione um agente externo antes de salvar."
+        external_agent_invalid: "Selecione um agente retornado pelo endpoint configurado."
+        external_agent_reselect: "O endpoint mudou e o agente selecionado antes não está disponível nele. Selecione um agente do novo endpoint."
+        agent_discovery_error: "Não foi possível carregar os agentes: %{error}"
+        external_info:
+          title: "Configuração de IA externa"
+          items:
+            - "Informe a URL completa do endpoint compatível com a OpenAI, terminando em /v1/chat/completions."
+            - "O Sure descobre os agentes disponíveis em /v1/models depois que o endpoint e o token são salvos."
+            - "O serviço externo escolhe o modelo por trás de cada agente; o Sure apenas seleciona a rota do agente."
+            - "Erros de autenticação, endpoint ou agente são retornados pelo serviço externo. Consulte os logs dele quando uma requisição falhar."
         disconnect_title: Conexão externa
         disconnect_description: Remova a conexão com o assistente externo e volte a usar o assistente integrado.
         disconnect_button: Desconectar
@@ -178,7 +192,7 @@ pt-BR:
           body: Isso removerá a URL, o token e o ID do agente salvos e passará a usar o assistente integrado. Você pode se reconectar depois informando novas credenciais.
       llm_provider_selector:
         title: Provedor de IA
-        description: Escolha qual LLM alimenta o chat de IA. As operações em lote (categorização de transações, detecção de comerciantes e processamento de PDFs) atualmente sempre usam a OpenAI.
+        description: Escolha qual LLM alimenta o chat de IA. As operações em lote (categorização de transações, detecção de estabelecimentos e processamento de PDFs) atualmente sempre usam a OpenAI.
         env_configured_message: Configurado com sucesso através da variável de ambiente LLM_PROVIDER.
         provider_label: Provedor de LLM ativo
         provider_openai: OpenAI
@@ -197,7 +211,45 @@ pt-BR:
         base_url_placeholder: https://api.anthropic.com (padrão)
         model_label: Modelo padrão (opcional)
         model_placeholder: claude-sonnet-4-6 (padrão)
-        model_help: Usado no chat e no processamento de PDFs. As operações em lote (categorização, detecção de comerciantes) usam o Haiku por padrão, para reduzir custos.
+        model_help: Usado no chat e no processamento de PDFs. As operações em lote (categorização, detecção de estabelecimentos) usam o Haiku por padrão, para reduzir custos.
+      categorization_provider_selector:
+        title: "Categorização de transações"
+        preview_pill: "Prévia"
+        description: "Escolha qual provedor categoriza as transações. Isso é independente do provedor de IA acima, que cuida do chat e do processamento de PDFs."
+        env_notice: "Definido como %{type} por variáveis de ambiente."
+        provider_label: "Provedor de categorização"
+        provider_llm: "Provedor de IA (OpenAI ou Anthropic)"
+        provider_jev: "Jev (TypeSafe)"
+        provider_help: "O provedor de IA lê um lote de transações e devolve os nomes das categorias. O Jev escolhe na sua lista de categorias e retorna uma confiança calibrada para cada transação."
+        jev_configured: "Chave de API do Jev configurada."
+        jev_not_configured: "O Jev está selecionado, mas não tem chave de API configurada. A categorização continua usando o provedor de IA até você adicionar uma abaixo."
+        data_retention_heading: "Compartilhamento de dados"
+        data_retention_direct: "As descrições e os valores das transações e os nomes das suas categorias são enviados à TypeSafe para serem categorizados. Consulte a política de retenção de dados dela antes de ativar isso com dados reais."
+        data_retention_proxied: "As descrições e os valores das transações e os nomes das suas categorias são enviados a %{host}, que os repassa à TypeSafe. Consulte as políticas de retenção de dados dos dois provedores antes de ativar isso com dados reais."
+        confidence_threshold_label: "Confiança mínima (0–1)"
+        confidence_threshold_help: "Abaixo desta confiança, a categoria não é aplicada e a transação fica sem categoria, para que uma próxima execução tente de novo. Nada é descartado. Use 0 para aplicar todas as respostas."
+        confidence_threshold_env_notice: "Bloqueado pela variável de ambiente CATEGORIZATION_CONFIDENCE_THRESHOLD."
+        shadow_rate_label: "Taxa de comparação paralela (0–1)"
+        shadow_rate_help: "Executa o provedor que você NÃO selecionou junto com o selecionado, registrando onde eles discordam sem alterar nenhuma categoria. Isso dobra o gasto com API em cada execução de categorização amostrada. Use 0 para desativar."
+        shadow_rate_env_notice: "Bloqueado pela variável de ambiente CATEGORIZATION_SHADOW_RATE."
+      categorization_shadow_results:
+        shadow_results_heading: "Comparação paralela"
+        shadow_results_empty: "Nenhuma comparação registrada ainda. Defina uma taxa de comparação paralela acima de 0 e execute a categorização para coletar algumas."
+        shadow_results_summary: "%{agreement}%% de concordância em %{count} transações amostradas."
+        shadow_disagreements_heading: "Discordâncias mais recentes"
+        shadow_disagreement_row: "%{applied_provider} escolheu %{applied_category}; %{shadow_provider} escolheu %{shadow_category}."
+        shadow_disagreement_confidence: "(confiança %{confidence})"
+        shadow_no_disagreements: "Os dois provedores concordaram em todas as transações amostradas."
+        shadow_no_category: "sem categoria"
+      jev_settings:
+        env_configured_message: "Configurado com sucesso por variáveis de ambiente."
+        api_key_label: "Chave de API"
+        api_key_placeholder: "Insira sua chave de API da TypeSafe"
+        endpoint_label: "Endpoint (opcional)"
+        endpoint_placeholder: "https://api.typesafe.ai/v1/systemone (padrão)"
+        model_label: "Modelo (opcional)"
+        model_placeholder: "jev-latest (padrão)"
+        model_help: "Por padrão, conecta direto à TypeSafe. Para acessar o Jev pelo OpenRouter, defina o endpoint como https://openrouter.ai/api/alpha/decisions e o modelo como ~typesafe/jev-latest."
       rentcast_settings:
         title: RentCast
         description: Insira sua chave de API da RentCast para consultar dados e estimativas de valor de imóveis nos EUA ao adicionar um imóvel. O plano gratuito é limitado a 50 requisições de API por mês, compartilhadas entre consultas de imóveis e atualizações diárias de avaliação. Em um plano pago, aumente o limite com a variável de ambiente RENTCAST_MAX_REQUESTS_PER_MONTH.

@@ -25,10 +25,10 @@ pt-BR:
       category_search_placeholder: Pesquisar categorias
       create_category: Criar "%{name}"
       create_category_error: Não foi possível criar a categoria
-      merchant_label: Comerciante
+      merchant_label: Estabelecimento
       create_merchant: Criar
-      create_merchant_error: Não foi possível criar o comerciante
-      merchant_search_placeholder: Pesquisar ou criar comerciante
+      create_merchant_error: Não foi possível criar o estabelecimento
+      merchant_search_placeholder: Pesquisar ou criar estabelecimento
     new:
       new_transaction: Nova transação
     show:
@@ -44,7 +44,7 @@ pt-BR:
       mark_recurring: Marcar como Recorrente
       mark_recurring_subtitle: Acompanhe como uma transação recorrente. A variação de valor é calculada automaticamente com base nos últimos 6 meses de transações similares.
       mark_recurring_title: Transação Recorrente
-      merchant_label: Comerciante
+      merchant_label: Estabelecimento
       name_label: Nome
       nature: Tipo
       none: "(nenhum)"
@@ -84,14 +84,33 @@ pt-BR:
       payee: Favorecido
       description: Descrição
       memo: Memorando
+      original_description: "Descrição original"
+      payment_channel: "Canal de pagamento"
+      transaction_code: "Código da transação"
       provider_extras: Dados extras do provedor
+      plaid_payment_meta_label: "Dados do pagamento · %{name}"
+      plaid_counterparty_label: "Contraparte %{index}"
+      provider_extra_fields:
+        by_order_of: "Por ordem de"
+        confidence_level: "Nível de confiança"
+        entity_id: "ID da entidade"
+        logo_url: "URL do logo"
+        name: "Nome"
+        payee: "Favorecido"
+        payer: "Pagador"
+        phone_number: "Telefone"
+        ppd_id: "ID PPD"
+        reason: "Motivo"
+        reference_number: "Número de referência"
+        type: "Tipo"
+        website: "Site"
       transfer_or_debt_payment: Transferência ou pagamento de dívida?
       open_matcher: Abrir vinculação
       convert: Converter
     header:
       edit_categories: Editar categorias
       edit_imports: Editar importações
-      edit_merchants: Editar comerciantes
+      edit_merchants: Editar estabelecimentos
       edit_tags: Editar tags
       import: Importar
     transaction:
@@ -115,7 +134,7 @@ pt-BR:
       edit_rules: Editar regras
       edit_categories: Editar categorias
       edit_tags: Editar tags
-      edit_merchants: Editar comerciantes
+      edit_merchants: Editar estabelecimentos
       edit_imports: Editar importações
       new_transaction: Nova transação
       categorize_button:
@@ -148,7 +167,7 @@ pt-BR:
           start_date: Data inicial
           end_date: Data final
         merchant_filter:
-          filter_merchants: Filtrar comerciantes
+          filter_merchants: Filtrar estabelecimentos
         tag_filter:
           filter_tags: Filtrar tags
         status_filter:
@@ -162,7 +181,7 @@ pt-BR:
         category_filter: Categoria
         clear_filters: Limpar filtros
         date_filter: Data
-        merchant_filter: Comerciante
+        merchant_filter: Estabelecimento
         tag_filter: Tag
         type_filter: Tipo
         status_filter: Status
@@ -181,8 +200,8 @@ pt-BR:
         category_prompt: Selecione uma categoria
         date_label: Data
         header_title: Editar transações
-        merchant_label: Comerciante
-        merchant_prompt: Selecione um comerciante
+        merchant_label: Estabelecimento
+        merchant_prompt: Selecione um estabelecimento
         name_label: Nome
         name_placeholder: Digite um nome que será aplicado às transações selecionadas
         none: (nenhum)
@@ -297,7 +316,7 @@ pt-BR:
         amount: Valor
         category: Categoria
         tag: Tag
-        merchant: Comerciante
+        merchant: Estabelecimento
     convert_to_trade:
       title: Converter em negociação com ativo
       description: Converta esta transação em uma negociação com os dados do ativo

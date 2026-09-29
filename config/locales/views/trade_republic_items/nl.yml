@@ -6,6 +6,7 @@ nl:
       connection_description: "Verbind een Trade Republic-beleggingsrekening via een veilige webaanmelding"
       institution_name: Trade Republic
   trade_republic_items:
+    duplicate_connection: "Deze Trade Republic-rekening is al gekoppeld. De nieuwe koppeling is verwijderd."
     portfolio_categories:
       brokerage: "Brokeragerekening"
       private_markets: "Privémarkten"
@@ -37,6 +38,9 @@ nl:
         unknown:
           one: '%{count} onbekende activiteit'
           other: '%{count} onbekende activiteiten'
+        pending_trade_details:
+          one: "%{count} beleggingsactiviteit wacht op details"
+          other: "%{count} beleggingsactiviteiten wachten op details"
         expenses:
           one: '%{count} uitgave in de afgelopen 30 dagen (%{amount})'
           other: '%{count} uitgaven in de afgelopen 30 dagen (%{amount})'
@@ -146,6 +150,7 @@ nl:
         tax_refund: Belastingteruggaaf
         buy: Koop
         sell: Verkoop
+        round_up: Round up
     defaults:
       name: Trade Republic
     sync_status:

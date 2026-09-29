@@ -43,8 +43,11 @@ pt-BR:
         description: Projeção feita a partir do saldo original, da taxa e do prazo, começando em %{start_date}. Pagamentos extras não são considerados.
         variable_rate_notice: A taxa deste empréstimo muda ao longo do tempo. O cronograma é recalculado a cada alteração registrada, mantendo a data de quitação original e ajustando o valor da parcela; uma alteração que ainda não foi registrada mudará estes valores.
         opening_payment: Parcela Inicial
+        forecasted_payoff_date: "Data prevista de quitação"
+        forecasted_payoff_not_converged: "Não é quitado no ritmo atual de pagamento"
         interest: Juros
         monthly_payment: Parcela Mensal
+        not_applicable: "N/D"
         number: Nº
         payment: Parcela
         principal: Amortização

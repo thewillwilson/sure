@@ -60,6 +60,11 @@ pt-BR:
       semiannual: Semestral
       annual: Anual
       custom: Periodicidade personalizada
+      interval: "Intervalo personalizado"
+    frequency_interval_units:
+      weekly: "semanas"
+      monthly: "meses"
+      yearly: "anos"
     frequency:
       monthly: Mensal, no %{day}
       weekly: 'Semanal: %{weekday}'
@@ -68,6 +73,9 @@ pt-BR:
       quarterly: Trimestral, no %{day}
       semiannual: Semestral, no %{day}
       annual: Anual, no %{day} de %{month}
+      every_n_weeks: "A cada %{interval} semanas: %{weekday}"
+      every_n_months: "A cada %{interval} meses, no %{day}"
+      every_n_years: "A cada %{interval} anos, no %{day} de %{month}"
       custom: Periodicidade personalizada
       last_day: último dia
     actions:
@@ -102,7 +110,7 @@ pt-BR:
       title: Encontre uma transação para começar
       income_title: Encontre um depósito para começar
       hint: Escolher uma apenas preenche o formulário; você ainda pode alterar qualquer coisa.
-      search_placeholder: Buscar por nome, notas ou comerciante
+      search_placeholder: Buscar por nome, notas ou estabelecimento
       back: Voltar ao formulário
       showing_recent: Mostrando as %{count} mais recentes. Busque para refinar.
       no_results: Nada corresponde a “%{query}”. Tente menos palavras ou volte e preencha o formulário você mesmo.
@@ -165,6 +173,8 @@ pt-BR:
       frequency_label: Frequência
       frequency_hint: Com que frequência esta conta vence. Ajuste os detalhes do dia para coincidir com sua fatura ou extrato.
       frequency_day_label: No dia
+      frequency_interval_label: "Repete a cada"
+      frequency_interval_unit_label: "Unidade"
       frequency_second_day_label: E no dia
       frequency_weekday_label: Dia da semana
       frequency_month_label: Mês

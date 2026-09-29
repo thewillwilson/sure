@@ -48,6 +48,9 @@ pt-BR:
       enable_category_matcher_hint: Quando ativada, a categoria sugerida pelo provedor é aplicada às transações importadas. Desative para deixar as novas transações sem categoria.
     index:
       accounts: Contas
+      financekit_accounts:
+        title: "Apple Wallet"
+        description: "Gerencie as conexões com a Apple Wallet e a sincronização no app do Sure para iOS."
       manual_accounts:
         other_accounts: Outras contas
       new_account: Nova conta
@@ -75,6 +78,7 @@ pt-BR:
       activity:
         amount: Valor
         balance: Saldo
+        category: "Categoria"
         date: Data
         entries: lançamentos
         entry: lançamento
@@ -85,6 +89,7 @@ pt-BR:
         search:
           placeholder: Buscar lançamentos por nome
         title: Atividade
+        uncategorized_only: "Somente sem categoria"
         confirmed: Efetivadas
         filter: Filtrar
         new_activity: Nova atividade
@@ -153,6 +158,7 @@ pt-BR:
       title: Desvincular conta do provedor?
       description_html: "Você está prestes a desvincular <strong>%{account_name}</strong> de <strong>%{provider_name}</strong>. Isso a converterá em uma conta manual."
       warning_title: O que isso significa
+      warning_wallet_connection: "Todas as contas desta conexão com a Apple Wallet serão desvinculadas. As transações e os saldos serão preservados. Você pode reconectar pelo app do Sure para iOS com uma nova configuração da Wallet."
       warning_no_sync: A conta não sincronizará mais automaticamente com seu provedor
       warning_manual_updates: Você precisará adicionar transações e atualizar saldos manualmente
       warning_transactions_kept: Todas as transações e saldos existentes serão preservados

@@ -10,10 +10,11 @@ pt-BR:
     attributes:
       recurring_transaction:
         payment_url: Link de pagamento
+        frequency_interval: "Intervalo de repetição"
     errors:
       models:
         recurring_transaction:
-          merchant_or_name_required: Informe o comerciante ou o nome
+          merchant_or_name_required: Informe o estabelecimento ou o nome
           attributes:
             payment_url:
               invalid_scheme: deve ser um endereço http:// ou https:// válido

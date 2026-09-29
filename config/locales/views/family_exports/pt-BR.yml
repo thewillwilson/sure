@@ -27,7 +27,7 @@ pt-BR:
           failed: Falhou
         actions:
           delete: Excluir
-          download: Descarregar
+          download: Baixar
           mark_failed: Marcar como com falha
           confirm_mark_failed: Esta exportação está inativa há algum tempo e a tarefa em segundo plano provavelmente foi interrompida. Marcá-la como com falha? Você poderá criar uma nova exportação em seguida.
       empty: Nenhuma exportação ainda.
